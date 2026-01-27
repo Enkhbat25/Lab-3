@@ -5,6 +5,37 @@ let gameMode = 'pvp'; // 'pvp' or 'ai'
 let aiDifficulty = 'medium';
 let gameActive = true;
 
+// Theme
+let isDarkMode = localStorage.getItem('tictactoe-theme') !== 'light';
+
+function initTheme() {
+    const themeBtn = document.getElementById('theme-toggle');
+    if (!isDarkMode) {
+        document.body.classList.add('light-mode');
+        themeBtn.textContent = '🌙 Dark Mode';
+    } else {
+        themeBtn.textContent = '☀️ Light Mode';
+    }
+}
+
+function toggleTheme() {
+    isDarkMode = !isDarkMode;
+    const themeBtn = document.getElementById('theme-toggle');
+
+    if (isDarkMode) {
+        document.body.classList.remove('light-mode');
+        themeBtn.textContent = '☀️ Light Mode';
+        localStorage.setItem('tictactoe-theme', 'dark');
+    } else {
+        document.body.classList.add('light-mode');
+        themeBtn.textContent = '🌙 Dark Mode';
+        localStorage.setItem('tictactoe-theme', 'light');
+    }
+}
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', initTheme);
+
 // DOM Elements
 const menuScreen = document.getElementById('menu');
 const aiMenuScreen = document.getElementById('ai-menu');

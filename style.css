@@ -4,14 +4,64 @@
     box-sizing: border-box;
 }
 
+/* Dark Theme (default) */
+:root {
+    --bg-gradient-1: #1a1a2e;
+    --bg-gradient-2: #16213e;
+    --text-color: #fff;
+    --primary-color: #00d4ff;
+    --secondary-color: #e94560;
+    --screen-bg: rgba(255, 255, 255, 0.1);
+    --cell-bg: rgba(255, 255, 255, 0.1);
+    --cell-hover: rgba(255, 255, 255, 0.2);
+    --stats-bg: rgba(255, 255, 255, 0.05);
+    --stats-text: #ccc;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --btn-back-1: #4a4a4a;
+    --btn-back-2: #2a2a2a;
+}
+
+/* Light Theme */
+body.light-mode {
+    --bg-gradient-1: #f0f4f8;
+    --bg-gradient-2: #d9e2ec;
+    --text-color: #1a1a2e;
+    --primary-color: #0077b6;
+    --secondary-color: #d62839;
+    --screen-bg: rgba(255, 255, 255, 0.9);
+    --cell-bg: rgba(0, 0, 0, 0.05);
+    --cell-hover: rgba(0, 0, 0, 0.1);
+    --stats-bg: rgba(0, 0, 0, 0.05);
+    --stats-text: #555;
+    --shadow-color: rgba(0, 0, 0, 0.15);
+    --btn-back-1: #6b7280;
+    --btn-back-2: #4b5563;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #fff;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+#theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: auto;
+    padding: 10px 20px;
+    font-size: 1rem;
+    z-index: 100;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+#theme-toggle:hover {
+    transform: translateY(-2px);
 }
 
 .container {
@@ -23,21 +73,21 @@ h1 {
     font-size: 3rem;
     margin-bottom: 30px;
     text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-    color: #00d4ff;
+    color: var(--primary-color);
 }
 
 h2 {
     font-size: 1.8rem;
     margin-bottom: 25px;
-    color: #e94560;
+    color: var(--secondary-color);
 }
 
 .screen {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--screen-bg);
     padding: 40px;
     border-radius: 20px;
     backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px var(--shadow-color);
 }
 
 .hidden {
@@ -55,7 +105,7 @@ button {
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+    background: linear-gradient(135deg, var(--secondary-color) 0%, #0f3460 100%);
     color: #fff;
 }
 
@@ -65,7 +115,7 @@ button:hover {
 }
 
 .back-btn {
-    background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+    background: linear-gradient(135deg, var(--btn-back-1) 0%, var(--btn-back-2) 100%);
     margin-top: 20px;
 }
 
@@ -85,7 +135,7 @@ button:hover {
 .cell {
     width: 100px;
     height: 100px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--cell-bg);
     border-radius: 10px;
     display: flex;
     justify-content: center;
@@ -97,23 +147,31 @@ button:hover {
 }
 
 .cell:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--cell-hover);
     transform: scale(1.05);
 }
 
 .cell.x {
-    color: #00d4ff;
+    color: var(--primary-color);
     text-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
 }
 
 .cell.o {
-    color: #e94560;
+    color: var(--secondary-color);
     text-shadow: 0 0 20px rgba(233, 69, 96, 0.8);
+}
+
+body.light-mode .cell.x {
+    text-shadow: 0 0 10px rgba(0, 119, 182, 0.5);
+}
+
+body.light-mode .cell.o {
+    text-shadow: 0 0 10px rgba(214, 40, 57, 0.5);
 }
 
 .cell.winner {
     animation: pulse 0.5s ease infinite alternate;
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--cell-hover);
 }
 
 @keyframes pulse {
@@ -129,11 +187,11 @@ button:hover {
 }
 
 #mode-display {
-    color: #00d4ff;
+    color: var(--primary-color);
 }
 
 #turn-display {
-    color: #e94560;
+    color: var(--secondary-color);
 }
 
 #result {
@@ -141,22 +199,22 @@ button:hover {
     margin: 20px 0;
     padding: 15px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--cell-bg);
 }
 
 #result.win {
-    color: #4ade80;
-    text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+    color: #22c55e;
+    text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
 }
 
 #result.lose {
-    color: #f87171;
-    text-shadow: 0 0 20px rgba(248, 113, 113, 0.5);
+    color: #ef4444;
+    text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
 }
 
 #result.draw {
-    color: #fbbf24;
-    text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    color: #f59e0b;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
 }
 
 #game-buttons {
@@ -176,23 +234,23 @@ button:hover {
 .stats-section {
     margin-bottom: 20px;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--stats-bg);
     border-radius: 10px;
 }
 
 .stats-section h3 {
-    color: #00d4ff;
+    color: var(--primary-color);
     margin-bottom: 10px;
     font-size: 1.2rem;
 }
 
 .stats-section p {
     margin: 5px 0;
-    color: #ccc;
+    color: var(--stats-text);
 }
 
 .stats-section span {
-    color: #fff;
+    color: var(--text-color);
     font-weight: bold;
 }
 
@@ -214,5 +272,12 @@ button:hover {
 
     .screen {
         padding: 20px;
+    }
+
+    #theme-toggle {
+        top: 10px;
+        right: 10px;
+        padding: 8px 15px;
+        font-size: 0.9rem;
     }
 }
