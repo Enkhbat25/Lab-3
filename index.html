@@ -7,26 +7,36 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button id="theme-toggle" onclick="toggleTheme()">☀️ Light Mode</button>
+    <div class="top-controls">
+        <select id="lang-select" onchange="changeLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="mn">Монгол</option>
+            <option value="ru">Русский</option>
+            <option value="ko">한국어</option>
+            <option value="ja">日本語</option>
+            <option value="zh">中文</option>
+        </select>
+        <button id="theme-toggle" onclick="toggleTheme()">☀️ Light Mode</button>
+    </div>
     <div class="container">
-        <h1>Tic-Tac-Toe</h1>
+        <h1 data-i18n="title">Tic-Tac-Toe</h1>
 
         <!-- Menu Screen -->
         <div id="menu" class="screen">
-            <h2>Main Menu</h2>
-            <button onclick="startPvP()">Player vs Player</button>
-            <button onclick="showAIMenu()">Player vs AI</button>
-            <button onclick="showStats()">View Statistics</button>
-            <button onclick="resetStats()">Reset Statistics</button>
+            <h2 data-i18n="mainMenu">Main Menu</h2>
+            <button onclick="startPvP()" data-i18n="pvp">Player vs Player</button>
+            <button onclick="showAIMenu()" data-i18n="pvai">Player vs AI</button>
+            <button onclick="showStats()" data-i18n="viewStats">View Statistics</button>
+            <button onclick="resetStats()" data-i18n="resetStats">Reset Statistics</button>
         </div>
 
         <!-- AI Difficulty Selection -->
         <div id="ai-menu" class="screen hidden">
-            <h2>Select Difficulty</h2>
-            <button onclick="startAI('easy')">Easy</button>
-            <button onclick="startAI('medium')">Medium</button>
-            <button onclick="startAI('hard')">Hard (Unbeatable)</button>
-            <button onclick="showMenu()" class="back-btn">Back</button>
+            <h2 data-i18n="selectDifficulty">Select Difficulty</h2>
+            <button onclick="startAI('easy')" data-i18n="easy">Easy</button>
+            <button onclick="startAI('medium')" data-i18n="medium">Medium</button>
+            <button onclick="startAI('hard')" data-i18n="hard">Hard (Unbeatable)</button>
+            <button onclick="showMenu()" class="back-btn" data-i18n="back">Back</button>
         </div>
 
         <!-- Game Screen -->
@@ -48,16 +58,16 @@
             </div>
             <div id="result" class="hidden"></div>
             <div id="game-buttons">
-                <button onclick="restartGame()">Play Again</button>
-                <button onclick="showMenu()" class="back-btn">Main Menu</button>
+                <button onclick="restartGame()" data-i18n="playAgain">Play Again</button>
+                <button onclick="showMenu()" class="back-btn" data-i18n="mainMenuBtn">Main Menu</button>
             </div>
         </div>
 
         <!-- Stats Screen -->
         <div id="stats" class="screen hidden">
-            <h2>Statistics</h2>
+            <h2 data-i18n="statistics">Statistics</h2>
             <div id="stats-content"></div>
-            <button onclick="showMenu()" class="back-btn">Back</button>
+            <button onclick="showMenu()" class="back-btn" data-i18n="back">Back</button>
         </div>
     </div>
 
