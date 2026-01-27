@@ -8,35 +8,31 @@ def get_easy_move(board):
 
 
 def get_medium_move(board, ai_symbol):
-    """Medium AI: blocks opponent wins and takes winning moves."""
+    """Medium AI: sometimes blocks and takes wins, but makes mistakes."""
     opponent = 'O' if ai_symbol == 'X' else 'X'
     available = board.get_available_moves()
 
-    # Check if AI can win
-    for move in available:
-        test_board = board.copy()
-        test_board.make_move(move, ai_symbol)
-        if test_board.check_winner() == ai_symbol:
-            return move
+    # 70% chance to take winning move
+    if random.random() < 0.7:
+        for move in available:
+            test_board = board.copy()
+            test_board.make_move(move, ai_symbol)
+            if test_board.check_winner() == ai_symbol:
+                return move
 
-    # Block opponent's winning move
-    for move in available:
-        test_board = board.copy()
-        test_board.make_move(move, opponent)
-        if test_board.check_winner() == opponent:
-            return move
+    # 50% chance to block opponent's winning move
+    if random.random() < 0.5:
+        for move in available:
+            test_board = board.copy()
+            test_board.make_move(move, opponent)
+            if test_board.check_winner() == opponent:
+                return move
 
-    # Take center if available
-    if 5 in available:
+    # 40% chance to take center if available
+    if random.random() < 0.4 and 5 in available:
         return 5
 
-    # Take a corner if available
-    corners = [1, 3, 7, 9]
-    available_corners = [c for c in corners if c in available]
-    if available_corners:
-        return random.choice(available_corners)
-
-    # Take any available move
+    # Otherwise random move
     return random.choice(available) if available else None
 
 

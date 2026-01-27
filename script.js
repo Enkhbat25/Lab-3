@@ -595,31 +595,36 @@ function getEasyMove(available) {
 }
 
 function getMediumMove(available) {
-    for (const move of available) {
-        board[move] = 'O';
-        if (checkWinnerSimple() === 'O') {
+    // 70% chance to take winning move
+    if (Math.random() < 0.7) {
+        for (const move of available) {
+            board[move] = 'O';
+            if (checkWinnerSimple() === 'O') {
+                board[move] = '';
+                return move;
+            }
             board[move] = '';
-            return move;
         }
-        board[move] = '';
     }
 
-    for (const move of available) {
-        board[move] = 'X';
-        if (checkWinnerSimple() === 'X') {
+    // 50% chance to block player's winning move
+    if (Math.random() < 0.5) {
+        for (const move of available) {
+            board[move] = 'X';
+            if (checkWinnerSimple() === 'X') {
+                board[move] = '';
+                return move;
+            }
             board[move] = '';
-            return move;
         }
-        board[move] = '';
     }
 
-    if (available.includes(4)) return 4;
-
-    const corners = [0, 2, 6, 8].filter(c => available.includes(c));
-    if (corners.length > 0) {
-        return corners[Math.floor(Math.random() * corners.length)];
+    // 40% chance to take center
+    if (Math.random() < 0.4 && available.includes(4)) {
+        return 4;
     }
 
+    // Otherwise random move
     return getEasyMove(available);
 }
 
