@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+
+        <!-- Menu Screen -->
+        <div id="menu" class="screen">
+            <h2>Main Menu</h2>
+            <button onclick="startPvP()">Player vs Player</button>
+            <button onclick="showAIMenu()">Player vs AI</button>
+            <button onclick="showStats()">View Statistics</button>
+            <button onclick="resetStats()">Reset Statistics</button>
+        </div>
+
+        <!-- AI Difficulty Selection -->
+        <div id="ai-menu" class="screen hidden">
+            <h2>Select Difficulty</h2>
+            <button onclick="startAI('easy')">Easy</button>
+            <button onclick="startAI('medium')">Medium</button>
+            <button onclick="startAI('hard')">Hard (Unbeatable)</button>
+            <button onclick="showMenu()" class="back-btn">Back</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game" class="screen hidden">
+            <div id="game-info">
+                <span id="mode-display"></span>
+                <span id="turn-display"></span>
+            </div>
+            <div id="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+            <div id="result" class="hidden"></div>
+            <div id="game-buttons">
+                <button onclick="restartGame()">Play Again</button>
+                <button onclick="showMenu()" class="back-btn">Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Stats Screen -->
+        <div id="stats" class="screen hidden">
+            <h2>Statistics</h2>
+            <div id="stats-content"></div>
+            <button onclick="showMenu()" class="back-btn">Back</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
