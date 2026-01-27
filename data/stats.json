@@ -1,0 +1,12 @@
+{
+  "pvp": {
+    "player1_wins": 0,
+    "player2_wins": 0,
+    "draws": 0
+  },
+  "vs_ai": {
+    "easy": {"wins": 0, "losses": 0, "draws": 0},
+    "medium": {"wins": 0, "losses": 0, "draws": 0},
+    "hard": {"wins": 0, "losses": 0, "draws": 0}
+  }
+}
