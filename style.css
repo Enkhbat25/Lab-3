@@ -100,7 +100,7 @@ body::before {
 #lang-select,
 #theme-toggle {
     height: 46px;
-    padding: 0 18px;
+    padding: 0 16px;
     font-size: 0.9rem;
     font-weight: 600;
     border: 2px solid var(--screen-border);
@@ -116,6 +116,13 @@ body::before {
     justify-content: center;
 }
 
+#lang-select {
+    padding: 0 12px;
+    min-width: 140px;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+}
+
 #lang-select:hover,
 #theme-toggle:hover {
     border-color: var(--primary-color);
@@ -126,7 +133,8 @@ body::before {
 #lang-select option {
     background: var(--bg-gradient-1);
     color: var(--text-color);
-    padding: 10px;
+    padding: 12px 10px;
+    font-size: 1rem;
 }
 
 .container {
@@ -473,10 +481,14 @@ button:active {
 
     #lang-select,
     #theme-toggle {
-        height: 40px;
-        padding: 0 12px;
+        height: 38px;
+        padding: 0 10px;
         font-size: 0.8rem;
         border-radius: 10px;
+    }
+
+    #lang-select {
+        min-width: 120px;
     }
 
     #game-info {
