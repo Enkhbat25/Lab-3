@@ -99,8 +99,10 @@ body::before {
 
 #lang-select,
 #theme-toggle {
+    width: 150px;
     height: 46px;
     padding: 0 16px;
+    margin: 0;
     font-size: 0.9rem;
     font-weight: 600;
     border: 2px solid var(--screen-border);
@@ -114,13 +116,12 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
+    text-transform: none;
+    letter-spacing: normal;
 }
 
-#lang-select {
-    padding: 0 12px;
-    min-width: 140px;
-    font-size: 0.95rem;
-    letter-spacing: 0.3px;
+#theme-toggle::before {
+    display: none;
 }
 
 #lang-select:hover,
@@ -481,14 +482,11 @@ button:active {
 
     #lang-select,
     #theme-toggle {
+        width: 120px;
         height: 38px;
         padding: 0 10px;
         font-size: 0.8rem;
         border-radius: 10px;
-    }
-
-    #lang-select {
-        min-width: 120px;
     }
 
     #game-info {
