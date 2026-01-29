@@ -437,6 +437,60 @@ button:active {
     border-radius: 6px;
 }
 
+/* Help Section */
+#help-content {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.help-section {
+    margin-bottom: 16px;
+    padding: 18px;
+    background: var(--stats-bg);
+    border-radius: 14px;
+    border: 1px solid var(--screen-border);
+    transition: all 0.3s ease;
+}
+
+.help-section:hover {
+    border-color: var(--primary-color);
+    transform: translateX(5px);
+}
+
+.help-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.help-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.help-section li {
+    margin: 10px 0;
+    padding-left: 20px;
+    position: relative;
+    color: var(--stats-text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.help-section li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.help-section li strong {
+    color: var(--text-color);
+}
+
 /* Responsive */
 @media (max-width: 500px) {
     .container {

@@ -27,7 +27,8 @@
             <button onclick="startPvP()" data-i18n="pvp">Player vs Player</button>
             <button onclick="showAIMenu()" data-i18n="pvai">Player vs AI</button>
             <button onclick="showStats()" data-i18n="viewStats">View Statistics</button>
-            <button onclick="resetStats()" data-i18n="resetStats">Reset Statistics</button>
+            <button onclick="showHelp()" data-i18n="help">Help</button>
+            <button onclick="resetStats()" class="back-btn" data-i18n="resetStats">Reset Statistics</button>
         </div>
 
         <!-- AI Difficulty Selection -->
@@ -67,6 +68,40 @@
         <div id="stats" class="screen hidden">
             <h2 data-i18n="statistics">Statistics</h2>
             <div id="stats-content"></div>
+            <button onclick="showMenu()" class="back-btn" data-i18n="back">Back</button>
+        </div>
+
+        <!-- Help Screen -->
+        <div id="help" class="screen hidden">
+            <h2 data-i18n="helpTitle">How to Play</h2>
+            <div id="help-content">
+                <div class="help-section">
+                    <h3 data-i18n="helpRulesTitle">Game Rules</h3>
+                    <ul>
+                        <li data-i18n="helpRule1">The game is played on a 3x3 grid</li>
+                        <li data-i18n="helpRule2">Players take turns placing X or O</li>
+                        <li data-i18n="helpRule3">First to get 3 in a row wins!</li>
+                        <li data-i18n="helpRule4">If all cells are filled with no winner, it's a draw</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3 data-i18n="helpModesTitle">Game Modes</h3>
+                    <ul>
+                        <li><strong data-i18n="pvp">Player vs Player</strong>: <span data-i18n="helpPvpDesc">Play with a friend</span></li>
+                        <li><strong data-i18n="easy">Easy</strong>: <span data-i18n="helpEasyDesc">AI makes random moves</span></li>
+                        <li><strong data-i18n="medium">Medium</strong>: <span data-i18n="helpMediumDesc">AI plays smart sometimes</span></li>
+                        <li><strong data-i18n="hard">Hard</strong>: <span data-i18n="helpHardDesc">Unbeatable AI using Minimax</span></li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3 data-i18n="helpTipsTitle">Tips</h3>
+                    <ul>
+                        <li data-i18n="helpTip1">Control the center for an advantage</li>
+                        <li data-i18n="helpTip2">Watch for opponent's winning moves</li>
+                        <li data-i18n="helpTip3">Try to create two ways to win</li>
+                    </ul>
+                </div>
+            </div>
             <button onclick="showMenu()" class="back-btn" data-i18n="back">Back</button>
         </div>
     </div>

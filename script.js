@@ -40,7 +40,23 @@ const translations = {
         losses: 'Losses',
         vsAIEasy: 'vs AI - Easy',
         vsAIMedium: 'vs AI - Medium',
-        vsAIHard: 'vs AI - Hard'
+        vsAIHard: 'vs AI - Hard',
+        help: 'Help',
+        helpTitle: 'How to Play',
+        helpRulesTitle: 'Game Rules',
+        helpRule1: 'The game is played on a 3x3 grid',
+        helpRule2: 'Players take turns placing X or O',
+        helpRule3: 'First to get 3 in a row wins!',
+        helpRule4: 'If all cells are filled with no winner, it\'s a draw',
+        helpModesTitle: 'Game Modes',
+        helpPvpDesc: 'Play with a friend',
+        helpEasyDesc: 'AI makes random moves',
+        helpMediumDesc: 'AI plays smart sometimes',
+        helpHardDesc: 'Unbeatable AI using Minimax',
+        helpTipsTitle: 'Tips',
+        helpTip1: 'Control the center for an advantage',
+        helpTip2: 'Watch for opponent\'s winning moves',
+        helpTip3: 'Try to create two ways to win'
     },
     mn: {
         title: 'Икс-Тэг',
@@ -82,7 +98,23 @@ const translations = {
         losses: 'Ялагдал',
         vsAIEasy: 'vs AI - Амархан',
         vsAIMedium: 'vs AI - Дунд',
-        vsAIHard: 'vs AI - Хэцүү'
+        vsAIHard: 'vs AI - Хэцүү',
+        help: 'Тусламж',
+        helpTitle: 'Тоглох заавар',
+        helpRulesTitle: 'Тоглоомын дүрэм',
+        helpRule1: 'Тоглоом нь 3x3 хүснэгтэн дээр тоглогдоно',
+        helpRule2: 'Тоглогчид ээлжлэн X эсвэл O тавина',
+        helpRule3: 'Эхлээд 3-ыг дараалан цуглуулсан хүн яллана!',
+        helpRule4: 'Бүх нүд дүүрч ялагч гараагүй бол тэнцээ',
+        helpModesTitle: 'Тоглоомын горимууд',
+        helpPvpDesc: 'Найзтайгаа тоглох',
+        helpEasyDesc: 'AI санамсаргүй тоглоно',
+        helpMediumDesc: 'AI заримдаа ухаалаг тоглоно',
+        helpHardDesc: 'Ялагдашгүй AI (Minimax)',
+        helpTipsTitle: 'Зөвлөгөө',
+        helpTip1: 'Төв нүдийг эзэмшвэл давуу талтай',
+        helpTip2: 'Өрсөлдөгчийн ялах боломжийг хянаарай',
+        helpTip3: 'Хоёр ялах замыг бий болго'
     },
     ru: {
         title: 'Крестики-Нолики',
@@ -124,7 +156,23 @@ const translations = {
         losses: 'Поражения',
         vsAIEasy: 'против ИИ - Легко',
         vsAIMedium: 'против ИИ - Средне',
-        vsAIHard: 'против ИИ - Сложно'
+        vsAIHard: 'против ИИ - Сложно',
+        help: 'Помощь',
+        helpTitle: 'Как играть',
+        helpRulesTitle: 'Правила игры',
+        helpRule1: 'Игра ведётся на поле 3x3',
+        helpRule2: 'Игроки по очереди ставят X или O',
+        helpRule3: 'Первый, кто соберёт 3 в ряд, побеждает!',
+        helpRule4: 'Если все клетки заполнены без победителя - ничья',
+        helpModesTitle: 'Режимы игры',
+        helpPvpDesc: 'Играть с другом',
+        helpEasyDesc: 'ИИ делает случайные ходы',
+        helpMediumDesc: 'ИИ иногда играет умно',
+        helpHardDesc: 'Непобедимый ИИ (Minimax)',
+        helpTipsTitle: 'Советы',
+        helpTip1: 'Контролируйте центр для преимущества',
+        helpTip2: 'Следите за выигрышными ходами противника',
+        helpTip3: 'Создавайте две возможности для победы'
     },
     ko: {
         title: '틱택토',
@@ -166,7 +214,23 @@ const translations = {
         losses: '패배',
         vsAIEasy: 'vs AI - 쉬움',
         vsAIMedium: 'vs AI - 보통',
-        vsAIHard: 'vs AI - 어려움'
+        vsAIHard: 'vs AI - 어려움',
+        help: '도움말',
+        helpTitle: '게임 방법',
+        helpRulesTitle: '게임 규칙',
+        helpRule1: '3x3 격자에서 게임을 합니다',
+        helpRule2: '플레이어가 번갈아 X 또는 O를 놓습니다',
+        helpRule3: '먼저 3개를 연속으로 만들면 승리!',
+        helpRule4: '모든 칸이 차면 무승부입니다',
+        helpModesTitle: '게임 모드',
+        helpPvpDesc: '친구와 함께 플레이',
+        helpEasyDesc: 'AI가 무작위로 움직입니다',
+        helpMediumDesc: 'AI가 가끔 똑똑하게 플레이합니다',
+        helpHardDesc: '무적 AI (Minimax)',
+        helpTipsTitle: '팁',
+        helpTip1: '중앙을 점령하면 유리합니다',
+        helpTip2: '상대방의 승리 수를 주시하세요',
+        helpTip3: '두 가지 승리 방법을 만드세요'
     },
     ja: {
         title: '三目並べ',
@@ -208,7 +272,23 @@ const translations = {
         losses: '敗北',
         vsAIEasy: '対AI - 簡単',
         vsAIMedium: '対AI - 普通',
-        vsAIHard: '対AI - 難しい'
+        vsAIHard: '対AI - 難しい',
+        help: 'ヘルプ',
+        helpTitle: '遊び方',
+        helpRulesTitle: 'ゲームルール',
+        helpRule1: '3x3のマス目でプレイします',
+        helpRule2: 'プレイヤーは交互にXまたはOを置きます',
+        helpRule3: '先に3つ並べた人の勝ち！',
+        helpRule4: '全マスが埋まって勝者なしなら引き分け',
+        helpModesTitle: 'ゲームモード',
+        helpPvpDesc: '友達と対戦',
+        helpEasyDesc: 'AIがランダムに動きます',
+        helpMediumDesc: 'AIが時々賢くプレイします',
+        helpHardDesc: '無敵AI（Minimax）',
+        helpTipsTitle: 'ヒント',
+        helpTip1: '中央を取ると有利です',
+        helpTip2: '相手の勝ち筋に注意',
+        helpTip3: '2つの勝ち筋を作りましょう'
     },
     zh: {
         title: '井字棋',
@@ -250,7 +330,23 @@ const translations = {
         losses: '失败',
         vsAIEasy: '对战AI - 简单',
         vsAIMedium: '对战AI - 中等',
-        vsAIHard: '对战AI - 困难'
+        vsAIHard: '对战AI - 困难',
+        help: '帮助',
+        helpTitle: '游戏玩法',
+        helpRulesTitle: '游戏规则',
+        helpRule1: '在3x3的格子上进行游戏',
+        helpRule2: '玩家轮流放置X或O',
+        helpRule3: '先连成3个的玩家获胜！',
+        helpRule4: '所有格子填满且无获胜者则为平局',
+        helpModesTitle: '游戏模式',
+        helpPvpDesc: '与朋友对战',
+        helpEasyDesc: 'AI随机移动',
+        helpMediumDesc: 'AI有时会聪明地下棋',
+        helpHardDesc: '无敌AI（Minimax算法）',
+        helpTipsTitle: '小贴士',
+        helpTip1: '控制中心位置可获得优势',
+        helpTip2: '注意对手的获胜机会',
+        helpTip3: '尝试创造两种获胜方式'
     }
 };
 
@@ -334,6 +430,7 @@ const menuScreen = document.getElementById('menu');
 const aiMenuScreen = document.getElementById('ai-menu');
 const gameScreen = document.getElementById('game');
 const statsScreen = document.getElementById('stats');
+const helpScreen = document.getElementById('help');
 const cells = document.querySelectorAll('.cell');
 const turnDisplay = document.getElementById('turn-display');
 const modeDisplay = document.getElementById('mode-display');
@@ -374,6 +471,7 @@ function showScreen(screen) {
     aiMenuScreen.classList.add('hidden');
     gameScreen.classList.add('hidden');
     statsScreen.classList.add('hidden');
+    helpScreen.classList.add('hidden');
     screen.classList.remove('hidden');
 }
 
@@ -388,6 +486,10 @@ function showAIMenu() {
 function showStats() {
     updateStatsDisplay();
     showScreen(statsScreen);
+}
+
+function showHelp() {
+    showScreen(helpScreen);
 }
 
 function updateStatsDisplay() {
