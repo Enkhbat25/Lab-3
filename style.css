@@ -98,7 +98,8 @@ body::before {
 }
 
 #lang-select,
-#theme-toggle {
+#theme-toggle,
+#sound-toggle {
     width: 150px;
     height: 46px;
     padding: 0 16px;
@@ -120,12 +121,14 @@ body::before {
     letter-spacing: normal;
 }
 
-#theme-toggle::before {
+#theme-toggle::before,
+#sound-toggle::before {
     display: none;
 }
 
 #lang-select:hover,
-#theme-toggle:hover {
+#theme-toggle:hover,
+#sound-toggle:hover {
     border-color: var(--primary-color);
     box-shadow: 0 0 25px var(--primary-glow);
     transform: translateY(-2px);
@@ -535,11 +538,12 @@ button:active {
     }
 
     #lang-select,
-    #theme-toggle {
-        width: 120px;
+    #theme-toggle,
+    #sound-toggle {
+        width: 110px;
         height: 38px;
-        padding: 0 10px;
-        font-size: 0.8rem;
+        padding: 0 8px;
+        font-size: 0.75rem;
         border-radius: 10px;
     }
 

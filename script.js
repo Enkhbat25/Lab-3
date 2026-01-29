@@ -56,7 +56,9 @@ const translations = {
         helpTipsTitle: 'Tips',
         helpTip1: 'Control the center for an advantage',
         helpTip2: 'Watch for opponent\'s winning moves',
-        helpTip3: 'Try to create two ways to win'
+        helpTip3: 'Try to create two ways to win',
+        soundOn: '🔊 Sound On',
+        soundOff: '🔇 Sound Off'
     },
     mn: {
         title: 'Икс-Тэг',
@@ -114,7 +116,9 @@ const translations = {
         helpTipsTitle: 'Зөвлөгөө',
         helpTip1: 'Төв нүдийг эзэмшвэл давуу талтай',
         helpTip2: 'Өрсөлдөгчийн ялах боломжийг хянаарай',
-        helpTip3: 'Хоёр ялах замыг бий болго'
+        helpTip3: 'Хоёр ялах замыг бий болго',
+        soundOn: '🔊 Дуу асаалттай',
+        soundOff: '🔇 Дуу унтраалттай'
     },
     ru: {
         title: 'Крестики-Нолики',
@@ -172,7 +176,9 @@ const translations = {
         helpTipsTitle: 'Советы',
         helpTip1: 'Контролируйте центр для преимущества',
         helpTip2: 'Следите за выигрышными ходами противника',
-        helpTip3: 'Создавайте две возможности для победы'
+        helpTip3: 'Создавайте две возможности для победы',
+        soundOn: '🔊 Звук вкл',
+        soundOff: '🔇 Звук выкл'
     },
     ko: {
         title: '틱택토',
@@ -230,7 +236,9 @@ const translations = {
         helpTipsTitle: '팁',
         helpTip1: '중앙을 점령하면 유리합니다',
         helpTip2: '상대방의 승리 수를 주시하세요',
-        helpTip3: '두 가지 승리 방법을 만드세요'
+        helpTip3: '두 가지 승리 방법을 만드세요',
+        soundOn: '🔊 소리 켜짐',
+        soundOff: '🔇 소리 꺼짐'
     },
     ja: {
         title: '三目並べ',
@@ -288,7 +296,9 @@ const translations = {
         helpTipsTitle: 'ヒント',
         helpTip1: '中央を取ると有利です',
         helpTip2: '相手の勝ち筋に注意',
-        helpTip3: '2つの勝ち筋を作りましょう'
+        helpTip3: '2つの勝ち筋を作りましょう',
+        soundOn: '🔊 サウンドON',
+        soundOff: '🔇 サウンドOFF'
     },
     zh: {
         title: '井字棋',
@@ -346,9 +356,90 @@ const translations = {
         helpTipsTitle: '小贴士',
         helpTip1: '控制中心位置可获得优势',
         helpTip2: '注意对手的获胜机会',
-        helpTip3: '尝试创造两种获胜方式'
+        helpTip3: '尝试创造两种获胜方式',
+        soundOn: '🔊 声音开启',
+        soundOff: '🔇 声音关闭'
     }
 };
+
+// Sound System
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let soundEnabled = localStorage.getItem('tictactoe-sound') !== 'false';
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new AudioContext();
+    }
+}
+
+function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+    if (!soundEnabled) return;
+    initAudio();
+
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + duration);
+}
+
+function playMoveSound(player) {
+    if (player === 'X') {
+        playTone(600, 0.1, 'sine', 0.3);
+    } else {
+        playTone(400, 0.1, 'sine', 0.3);
+    }
+}
+
+function playWinSound() {
+    // Happy ascending melody
+    setTimeout(() => playTone(523, 0.15, 'sine', 0.3), 0);    // C5
+    setTimeout(() => playTone(659, 0.15, 'sine', 0.3), 150);  // E5
+    setTimeout(() => playTone(784, 0.15, 'sine', 0.3), 300);  // G5
+    setTimeout(() => playTone(1047, 0.3, 'sine', 0.3), 450);  // C6
+}
+
+function playLoseSound() {
+    // Sad descending tones
+    setTimeout(() => playTone(400, 0.2, 'sine', 0.3), 0);
+    setTimeout(() => playTone(300, 0.2, 'sine', 0.3), 200);
+    setTimeout(() => playTone(200, 0.4, 'sine', 0.3), 400);
+}
+
+function playDrawSound() {
+    // Neutral double beep
+    setTimeout(() => playTone(440, 0.15, 'triangle', 0.3), 0);
+    setTimeout(() => playTone(440, 0.15, 'triangle', 0.3), 200);
+}
+
+function playButtonSound() {
+    playTone(800, 0.05, 'sine', 0.2);
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('tictactoe-sound', soundEnabled);
+    updateSoundButtonText();
+    if (soundEnabled) {
+        playButtonSound();
+    }
+}
+
+function updateSoundButtonText() {
+    const soundBtn = document.getElementById('sound-toggle');
+    if (soundBtn) {
+        soundBtn.textContent = soundEnabled ? t('soundOn') : t('soundOff');
+    }
+}
 
 // Current language
 let currentLang = localStorage.getItem('tictactoe-lang') || 'en';
@@ -362,6 +453,7 @@ function changeLanguage(lang) {
     localStorage.setItem('tictactoe-lang', lang);
     updateAllText();
     updateThemeButtonText();
+    updateSoundButtonText();
     if (gameMode === 'pvp') {
         modeDisplay.textContent = t('pvpMode');
     } else if (gameMode === 'ai') {
@@ -423,6 +515,7 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initLanguage();
+    updateSoundButtonText();
 });
 
 // DOM Elements
@@ -606,6 +699,7 @@ function makeMove(index) {
     const cell = cells[index];
     cell.textContent = currentPlayer;
     cell.classList.add(currentPlayer.toLowerCase());
+    playMoveSound(currentPlayer);
 
     const winner = checkWinner();
     if (winner) {
@@ -638,6 +732,7 @@ function endGame(result) {
         resultDisplay.textContent = t('draw');
         resultDisplay.className = 'draw';
         turnDisplay.textContent = t('gameOver');
+        playDrawSound();
 
         if (gameMode === 'pvp') {
             stats.pvp.draws++;
@@ -648,6 +743,7 @@ function endGame(result) {
         if (gameMode === 'pvp') {
             resultDisplay.textContent = result === 'X' ? t('player1Wins') : t('player2Wins');
             resultDisplay.className = 'win';
+            playWinSound();
             if (result === 'X') {
                 stats.pvp.player1Wins++;
             } else {
@@ -657,10 +753,12 @@ function endGame(result) {
             if (result === 'X') {
                 resultDisplay.textContent = t('youWin');
                 resultDisplay.className = 'win';
+                playWinSound();
                 stats.ai[aiDifficulty].wins++;
             } else {
                 resultDisplay.textContent = t('aiWins');
                 resultDisplay.className = 'lose';
+                playLoseSound();
                 stats.ai[aiDifficulty].losses++;
             }
         }
