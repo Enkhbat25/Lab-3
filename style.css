@@ -274,28 +274,63 @@ button {
 #board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin: 25px auto;
+    gap: 8px;
+    margin: 15px auto;
     max-width: 340px;
-    padding: 15px;
+    padding: 12px;
     background: var(--screen-bg);
     border-radius: 20px;
     border: 1px solid var(--screen-border);
+}
+
+/* Dynamic board sizing */
+#board[data-size="3"] {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 320px;
+    gap: 10px;
+}
+
+#board[data-size="4"] {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 360px;
+    gap: 6px;
+}
+
+#board[data-size="5"] {
+    grid-template-columns: repeat(5, 1fr);
+    max-width: 400px;
+    gap: 5px;
 }
 
 .cell {
     aspect-ratio: 1;
     background: var(--cell-bg);
     border: 2px solid var(--cell-border);
-    border-radius: 16px;
+    border-radius: 12px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 800;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+}
+
+/* Adjust cell font size based on board size */
+#board[data-size="3"] .cell {
+    font-size: 2.8rem;
+    border-radius: 14px;
+}
+
+#board[data-size="4"] .cell {
+    font-size: 2rem;
+    border-radius: 10px;
+}
+
+#board[data-size="5"] .cell {
+    font-size: 1.5rem;
+    border-radius: 8px;
 }
 
 .cell:hover {
@@ -393,6 +428,57 @@ button {
     position: relative;
 }
 
+/* Board Size Selector */
+.board-size-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    justify-content: center;
+}
+
+.size-option {
+    padding: 8px 16px;
+    min-width: auto;
+    width: auto;
+    border: 2px solid var(--screen-border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    text-transform: none;
+}
+
+.size-option:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.size-option.active {
+    border-color: var(--primary-color);
+    background: rgba(0, 212, 255, 0.2);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.size-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Win Condition Info */
+#win-condition-info {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+#win-condition-number {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
 #game-info {
     display: flex;
     justify-content: space-between;
@@ -482,49 +568,65 @@ button {
 #stats-content {
     text-align: left;
     margin-bottom: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.stats-board-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--screen-bg);
+    border-radius: 16px;
+    border: 1px solid var(--screen-border);
+}
+
+.board-size-header {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+    text-align: center;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--screen-border);
 }
 
 .stats-section {
-    margin-bottom: 16px;
-    padding: 18px;
+    margin-bottom: 10px;
+    padding: 12px;
     background: var(--stats-bg);
-    border-radius: 14px;
+    border-radius: 10px;
     border: 1px solid var(--screen-border);
     transition: all 0.3s ease;
 }
 
+.stats-section:last-child {
+    margin-bottom: 0;
+}
+
 .stats-section:hover {
     border-color: var(--primary-color);
-    transform: translateX(5px);
 }
 
-.stats-section h3 {
-    color: var(--primary-color);
-    margin-bottom: 12px;
-    font-size: 1.1rem;
+.stats-section h4 {
+    color: var(--secondary-color);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
     font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.stats-section h3::before {
-    content: '📊';
-    font-size: 1rem;
 }
 
 .stats-section p {
-    margin: 8px 0;
+    margin: 5px 0;
     color: var(--stats-text);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 
 .stats-section span {
     color: var(--text-color);
     font-weight: 700;
     background: var(--cell-bg);
-    padding: 2px 8px;
-    border-radius: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
 }
 
 /* Help Section */

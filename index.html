@@ -43,11 +43,28 @@
 
         <!-- Game Screen -->
         <div id="game" class="screen hidden">
+            <!-- Board Size Selector -->
+            <div class="board-size-selector" role="radiogroup" aria-label="Board size">
+                <button class="size-option active" data-size="3x3" onclick="changeBoardSize('3x3')" aria-pressed="true">
+                    <span data-i18n="size3x3">3×3</span>
+                </button>
+                <button class="size-option" data-size="4x4" onclick="changeBoardSize('4x4')" aria-pressed="false">
+                    <span data-i18n="size4x4">4×4</span>
+                </button>
+                <button class="size-option" data-size="5x5" onclick="changeBoardSize('5x5')" aria-pressed="false">
+                    <span data-i18n="size5x5">5×5</span>
+                </button>
+            </div>
+            <div id="win-condition-info">
+                <span data-i18n="winConditionPrefix">Get</span>
+                <span id="win-condition-number">3</span>
+                <span data-i18n="winConditionSuffix">in a row to win!</span>
+            </div>
             <div id="game-info">
                 <span id="mode-display"></span>
                 <span id="turn-display"></span>
             </div>
-            <div id="board">
+            <div id="board" data-size="3">
                 <div class="cell" data-index="0"></div>
                 <div class="cell" data-index="1"></div>
                 <div class="cell" data-index="2"></div>

@@ -62,7 +62,13 @@ const translations = {
         undo: 'Undo',
         whoGoesFirst: 'Who goes first?',
         youFirst: 'You (X)',
-        aiFirst: 'AI (O)'
+        aiFirst: 'AI (O)',
+        size3x3: '3×3',
+        size4x4: '4×4',
+        size5x5: '5×5',
+        winConditionPrefix: 'Get',
+        winConditionSuffix: 'in a row to win!',
+        boardSize: 'Board Size'
     },
     mn: {
         title: 'Икс-Тэг',
@@ -126,7 +132,13 @@ const translations = {
         undo: 'Буцаах',
         whoGoesFirst: 'Хэн эхлэх вэ?',
         youFirst: 'Та (X)',
-        aiFirst: 'AI (O)'
+        aiFirst: 'AI (O)',
+        size3x3: '3×3',
+        size4x4: '4×4',
+        size5x5: '5×5',
+        winConditionPrefix: '',
+        winConditionSuffix: 'дараалан цуглуулж ял!',
+        boardSize: 'Хүснэгтийн хэмжээ'
     },
     ru: {
         title: 'Крестики-Нолики',
@@ -190,7 +202,13 @@ const translations = {
         undo: 'Отменить',
         whoGoesFirst: 'Кто ходит первым?',
         youFirst: 'Вы (X)',
-        aiFirst: 'ИИ (O)'
+        aiFirst: 'ИИ (O)',
+        size3x3: '3×3',
+        size4x4: '4×4',
+        size5x5: '5×5',
+        winConditionPrefix: 'Соберите',
+        winConditionSuffix: 'в ряд чтобы победить!',
+        boardSize: 'Размер поля'
     },
     ko: {
         title: '틱택토',
@@ -254,7 +272,13 @@ const translations = {
         undo: '실행 취소',
         whoGoesFirst: '누가 먼저 시작할까요?',
         youFirst: '당신 (X)',
-        aiFirst: 'AI (O)'
+        aiFirst: 'AI (O)',
+        size3x3: '3×3',
+        size4x4: '4×4',
+        size5x5: '5×5',
+        winConditionPrefix: '',
+        winConditionSuffix: '개를 연속으로 만들면 승리!',
+        boardSize: '보드 크기'
     },
     ja: {
         title: '三目並べ',
@@ -318,7 +342,13 @@ const translations = {
         undo: '元に戻す',
         whoGoesFirst: '先手を選択',
         youFirst: 'あなた (X)',
-        aiFirst: 'AI (O)'
+        aiFirst: 'AI (O)',
+        size3x3: '3×3',
+        size4x4: '4×4',
+        size5x5: '5×5',
+        winConditionPrefix: '',
+        winConditionSuffix: '個並べて勝利!',
+        boardSize: 'ボードサイズ'
     },
     zh: {
         title: '井字棋',
@@ -382,7 +412,13 @@ const translations = {
         undo: '撤销',
         whoGoesFirst: '谁先走？',
         youFirst: '你 (X)',
-        aiFirst: 'AI (O)'
+        aiFirst: 'AI (O)',
+        size3x3: '3×3',
+        size4x4: '4×4',
+        size5x5: '5×5',
+        winConditionPrefix: '连成',
+        winConditionSuffix: '个即可获胜!',
+        boardSize: '棋盘大小'
     }
 };
 
@@ -552,8 +588,19 @@ function initLanguage() {
     updateAllText();
 }
 
+// Board Size Configuration
+const BOARD_CONFIGS = {
+    '3x3': { size: 3, winCondition: 3, label: '3×3' },
+    '4x4': { size: 4, winCondition: 4, label: '4×4' },
+    '5x5': { size: 5, winCondition: 5, label: '5×5' }
+};
+
+let currentBoardConfig = BOARD_CONFIGS['3x3'];
+let boardSize = currentBoardConfig.size;
+let winCondition = currentBoardConfig.winCondition;
+
 // Game State
-let board = ['', '', '', '', '', '', '', '', ''];
+let board = Array(boardSize * boardSize).fill('');
 let currentPlayer = 'X';
 let gameMode = 'pvp';
 let aiDifficulty = 'medium';
@@ -561,6 +608,77 @@ let gameActive = true;
 let moveHistory = [];
 let playerGoesFirst = true;
 let focusedCellIndex = 0;
+
+// Winning lines cache for performance
+const winningLinesCache = new Map();
+
+/**
+ * Generate all possible winning lines for an NxN board
+ * @param {number} size - Board dimension (e.g., 3, 4, 5)
+ * @param {number} winLength - Number in a row needed to win
+ * @returns {number[][]} - Array of winning line index arrays
+ */
+function generateWinningLines(size, winLength) {
+    const lines = [];
+    const toIndex = (row, col) => row * size + col;
+
+    // Horizontal lines
+    for (let row = 0; row < size; row++) {
+        for (let startCol = 0; startCol <= size - winLength; startCol++) {
+            const line = [];
+            for (let i = 0; i < winLength; i++) {
+                line.push(toIndex(row, startCol + i));
+            }
+            lines.push(line);
+        }
+    }
+
+    // Vertical lines
+    for (let col = 0; col < size; col++) {
+        for (let startRow = 0; startRow <= size - winLength; startRow++) {
+            const line = [];
+            for (let i = 0; i < winLength; i++) {
+                line.push(toIndex(startRow + i, col));
+            }
+            lines.push(line);
+        }
+    }
+
+    // Diagonal lines (top-left to bottom-right)
+    for (let startRow = 0; startRow <= size - winLength; startRow++) {
+        for (let startCol = 0; startCol <= size - winLength; startCol++) {
+            const line = [];
+            for (let i = 0; i < winLength; i++) {
+                line.push(toIndex(startRow + i, startCol + i));
+            }
+            lines.push(line);
+        }
+    }
+
+    // Anti-diagonal lines (top-right to bottom-left)
+    for (let startRow = 0; startRow <= size - winLength; startRow++) {
+        for (let startCol = winLength - 1; startCol < size; startCol++) {
+            const line = [];
+            for (let i = 0; i < winLength; i++) {
+                line.push(toIndex(startRow + i, startCol - i));
+            }
+            lines.push(line);
+        }
+    }
+
+    return lines;
+}
+
+/**
+ * Get winning lines with caching for performance
+ */
+function getWinningLines(size, winLength) {
+    const key = `${size}-${winLength}`;
+    if (!winningLinesCache.has(key)) {
+        winningLinesCache.set(key, generateWinningLines(size, winLength));
+    }
+    return winningLinesCache.get(key);
+}
 
 // Haptic feedback utility
 function triggerHaptic(pattern = 10) {
@@ -586,32 +704,36 @@ function handleBoardKeydown(e) {
     const gameScreenVisible = !document.getElementById('game').classList.contains('hidden');
     if (!gameScreenVisible) return;
 
+    const totalCells = boardSize * boardSize;
+    const currentRow = Math.floor(focusedCellIndex / boardSize);
+    const currentCol = focusedCellIndex % boardSize;
     let newIndex = focusedCellIndex;
 
     switch (e.key) {
         case 'ArrowUp':
             e.preventDefault();
-            newIndex = focusedCellIndex - 3;
-            if (newIndex < 0) newIndex += 9; // Wrap to bottom
+            newIndex = focusedCellIndex - boardSize;
+            if (newIndex < 0) newIndex += totalCells; // Wrap to bottom
             break;
         case 'ArrowDown':
             e.preventDefault();
-            newIndex = focusedCellIndex + 3;
-            if (newIndex > 8) newIndex -= 9; // Wrap to top
+            newIndex = focusedCellIndex + boardSize;
+            if (newIndex >= totalCells) newIndex -= totalCells; // Wrap to top
             break;
         case 'ArrowLeft':
             e.preventDefault();
-            newIndex = focusedCellIndex - 1;
-            if (newIndex < 0 || focusedCellIndex % 3 === 0) {
-                newIndex = focusedCellIndex + 2; // Wrap to right
-                if (focusedCellIndex < 3) newIndex = focusedCellIndex + 2;
+            if (currentCol === 0) {
+                newIndex = focusedCellIndex + (boardSize - 1); // Wrap to right
+            } else {
+                newIndex = focusedCellIndex - 1;
             }
             break;
         case 'ArrowRight':
             e.preventDefault();
-            newIndex = focusedCellIndex + 1;
-            if (newIndex > 8 || focusedCellIndex % 3 === 2) {
-                newIndex = focusedCellIndex - 2; // Wrap to left
+            if (currentCol === boardSize - 1) {
+                newIndex = focusedCellIndex - (boardSize - 1); // Wrap to left
+            } else {
+                newIndex = focusedCellIndex + 1;
             }
             break;
         case 'Enter':
@@ -625,22 +747,22 @@ function handleBoardKeydown(e) {
             e.preventDefault();
             newIndex = 0;
             break;
-        // Number pad navigation (7,8,9 / 4,5,6 / 1,2,3)
-        case '7': newIndex = 0; break;
-        case '8': newIndex = 1; break;
-        case '9': newIndex = 2; break;
-        case '4': newIndex = 3; break;
-        case '5': newIndex = 4; break;
-        case '6': newIndex = 5; break;
-        case '1': newIndex = 6; break;
-        case '2': newIndex = 7; break;
-        case '3': newIndex = 8; break;
+        // Number pad navigation (only works for 3x3)
+        case '7': if (boardSize === 3) newIndex = 0; break;
+        case '8': if (boardSize === 3) newIndex = 1; break;
+        case '9': if (boardSize === 3) newIndex = 2; break;
+        case '4': if (boardSize === 3) newIndex = 3; break;
+        case '5': if (boardSize === 3) newIndex = 4; break;
+        case '6': if (boardSize === 3) newIndex = 5; break;
+        case '1': if (boardSize === 3) newIndex = 6; break;
+        case '2': if (boardSize === 3) newIndex = 7; break;
+        case '3': if (boardSize === 3) newIndex = 8; break;
         default:
             return;
     }
 
     // Update focus
-    if (newIndex !== focusedCellIndex && newIndex >= 0 && newIndex <= 8) {
+    if (newIndex !== focusedCellIndex && newIndex >= 0 && newIndex < totalCells) {
         focusedCellIndex = newIndex;
         updateCellFocus();
     }
@@ -698,7 +820,7 @@ function initAccessibility() {
     const boardElement = document.getElementById('board');
     if (boardElement) {
         boardElement.setAttribute('role', 'grid');
-        boardElement.setAttribute('aria-label', 'Tic-tac-toe game board');
+        boardElement.setAttribute('aria-label', `${boardSize} by ${boardSize} tic-tac-toe game board`);
         boardElement.setAttribute('aria-describedby', 'turn-display');
     }
 
@@ -756,30 +878,118 @@ const aiMenuScreen = document.getElementById('ai-menu');
 const gameScreen = document.getElementById('game');
 const statsScreen = document.getElementById('stats');
 const helpScreen = document.getElementById('help');
-const cells = document.querySelectorAll('.cell');
+let cells = document.querySelectorAll('.cell');
 const turnDisplay = document.getElementById('turn-display');
 const modeDisplay = document.getElementById('mode-display');
 const resultDisplay = document.getElementById('result');
+const boardElement = document.getElementById('board');
 
-// Win Patterns
-const winPatterns = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6]
-];
+/**
+ * Generate board cells dynamically based on current board size
+ */
+function generateBoardCells() {
+    // Clear existing cells (except the SVG)
+    const svg = document.getElementById('winning-line');
+    boardElement.innerHTML = '';
+    if (svg) boardElement.appendChild(svg);
 
-// Stats
+    // Update CSS grid
+    boardElement.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+    boardElement.setAttribute('data-size', boardSize);
+
+    // Create new cells
+    const totalCells = boardSize * boardSize;
+    for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.setAttribute('data-index', i);
+        cell.addEventListener('click', () => handleCellClick(cell));
+        boardElement.insertBefore(cell, svg);
+    }
+
+    // Update cells reference
+    cells = document.querySelectorAll('.cell');
+
+    // Re-initialize keyboard navigation and accessibility
+    initKeyboardNavigation();
+    initAccessibility();
+}
+
+/**
+ * Change board size configuration
+ */
+function changeBoardSize(configKey) {
+    if (!BOARD_CONFIGS[configKey]) return;
+
+    currentBoardConfig = BOARD_CONFIGS[configKey];
+    boardSize = currentBoardConfig.size;
+    winCondition = currentBoardConfig.winCondition;
+
+    // Update size selector UI
+    updateBoardSizeSelector();
+
+    // Regenerate board
+    generateBoardCells();
+
+    // Reset game
+    initGame();
+}
+
+/**
+ * Update board size selector button states
+ */
+function updateBoardSizeSelector() {
+    document.querySelectorAll('.size-option').forEach(btn => {
+        const size = btn.getAttribute('data-size');
+        if (size === `${boardSize}x${boardSize}`) {
+            btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
+        } else {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-pressed', 'false');
+        }
+    });
+
+    // Update win condition display
+    const winConditionNumber = document.getElementById('win-condition-number');
+    if (winConditionNumber) {
+        winConditionNumber.textContent = winCondition;
+    }
+}
+
+// Get current winning patterns (dynamic based on board size)
+function getWinPatterns() {
+    return getWinningLines(boardSize, winCondition);
+}
+
+// Stats (per board size)
 let stats = loadStats();
 
-function loadStats() {
-    return storage.get('tictactoe-stats', {
+function getDefaultBoardStats() {
+    return {
         pvp: { player1Wins: 0, player2Wins: 0, draws: 0 },
         ai: {
             easy: { wins: 0, losses: 0, draws: 0 },
             medium: { wins: 0, losses: 0, draws: 0 },
             hard: { wins: 0, losses: 0, draws: 0 }
         }
+    };
+}
+
+function loadStats() {
+    return storage.get('tictactoe-stats-v2', {
+        '3x3': getDefaultBoardStats(),
+        '4x4': getDefaultBoardStats(),
+        '5x5': getDefaultBoardStats()
     });
+}
+
+function getCurrentStats() {
+    const key = `${boardSize}x${boardSize}`;
+    if (!stats[key]) {
+        stats[key] = getDefaultBoardStats();
+    }
+    return stats[key];
 }
 
 function saveStats() {
@@ -815,38 +1025,39 @@ function showHelp() {
 
 function updateStatsDisplay() {
     const content = document.getElementById('stats-content');
-    content.innerHTML = `
-        <div class="stats-section">
-            <h3>${t('statsPvP')}</h3>
-            <p>${t('totalGames')}: <span>${stats.pvp.player1Wins + stats.pvp.player2Wins + stats.pvp.draws}</span></p>
-            <p>${t('p1Wins')}: <span>${stats.pvp.player1Wins}</span></p>
-            <p>${t('p2Wins')}: <span>${stats.pvp.player2Wins}</span></p>
-            <p>${t('draws')}: <span>${stats.pvp.draws}</span></p>
-        </div>
-        <div class="stats-section">
-            <h3>${t('vsAIEasy')}</h3>
-            <p>${t('wins')}: <span>${stats.ai.easy.wins}</span> | ${t('losses')}: <span>${stats.ai.easy.losses}</span> | ${t('draws')}: <span>${stats.ai.easy.draws}</span></p>
-        </div>
-        <div class="stats-section">
-            <h3>${t('vsAIMedium')}</h3>
-            <p>${t('wins')}: <span>${stats.ai.medium.wins}</span> | ${t('losses')}: <span>${stats.ai.medium.losses}</span> | ${t('draws')}: <span>${stats.ai.medium.draws}</span></p>
-        </div>
-        <div class="stats-section">
-            <h3>${t('vsAIHard')}</h3>
-            <p>${t('wins')}: <span>${stats.ai.hard.wins}</span> | ${t('losses')}: <span>${stats.ai.hard.losses}</span> | ${t('draws')}: <span>${stats.ai.hard.draws}</span></p>
-        </div>
-    `;
+    let html = '';
+
+    // Generate stats for each board size
+    const sizes = ['3x3', '4x4', '5x5'];
+    for (const size of sizes) {
+        const sizeStats = stats[size] || getDefaultBoardStats();
+        html += `
+            <div class="stats-board-section">
+                <h3 class="board-size-header">${size}</h3>
+                <div class="stats-section">
+                    <h4>${t('statsPvP')}</h4>
+                    <p>${t('totalGames')}: <span>${sizeStats.pvp.player1Wins + sizeStats.pvp.player2Wins + sizeStats.pvp.draws}</span></p>
+                    <p>${t('p1Wins')}: <span>${sizeStats.pvp.player1Wins}</span> | ${t('p2Wins')}: <span>${sizeStats.pvp.player2Wins}</span> | ${t('draws')}: <span>${sizeStats.pvp.draws}</span></p>
+                </div>
+                <div class="stats-section">
+                    <h4>${t('vsAI')}</h4>
+                    <p><strong>${t('easy')}:</strong> ${t('wins')}: <span>${sizeStats.ai.easy.wins}</span> | ${t('losses')}: <span>${sizeStats.ai.easy.losses}</span> | ${t('draws')}: <span>${sizeStats.ai.easy.draws}</span></p>
+                    <p><strong>${t('medium')}:</strong> ${t('wins')}: <span>${sizeStats.ai.medium.wins}</span> | ${t('losses')}: <span>${sizeStats.ai.medium.losses}</span> | ${t('draws')}: <span>${sizeStats.ai.medium.draws}</span></p>
+                    <p><strong>${t('hard')}:</strong> ${t('wins')}: <span>${sizeStats.ai.hard.wins}</span> | ${t('losses')}: <span>${sizeStats.ai.hard.losses}</span> | ${t('draws')}: <span>${sizeStats.ai.hard.draws}</span></p>
+                </div>
+            </div>
+        `;
+    }
+
+    content.innerHTML = html;
 }
 
 function resetStats() {
     if (confirm(t('confirmReset'))) {
         stats = {
-            pvp: { player1Wins: 0, player2Wins: 0, draws: 0 },
-            ai: {
-                easy: { wins: 0, losses: 0, draws: 0 },
-                medium: { wins: 0, losses: 0, draws: 0 },
-                hard: { wins: 0, losses: 0, draws: 0 }
-            }
+            '3x3': getDefaultBoardStats(),
+            '4x4': getDefaultBoardStats(),
+            '5x5': getDefaultBoardStats()
         };
         saveStats();
         alert(t('statsReset'));
@@ -885,10 +1096,11 @@ function selectFirstMove(playerFirst) {
 }
 
 function initGame() {
-    board = ['', '', '', '', '', '', '', '', ''];
+    board = Array(boardSize * boardSize).fill('');
     currentPlayer = 'X';
     gameActive = true;
     moveHistory = [];
+    focusedCellIndex = 0;
     resultDisplay.classList.add('hidden');
     resultDisplay.className = 'hidden';
 
@@ -905,6 +1117,7 @@ function initGame() {
 
     updateUndoButton();
     updateTurnDisplay();
+    updateBoardSizeSelector();
 
     // If AI goes first, make AI move
     if (gameMode === 'ai' && !playerGoesFirst) {
@@ -1059,53 +1272,52 @@ function makeMove(index) {
  * @returns {string|null} - Winner mark ('X' or 'O') or null
  */
 function checkWinner(options = {}) {
-    for (let i = 0; i < winPatterns.length; i++) {
-        const pattern = winPatterns[i];
-        const [a, b, c] = pattern;
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+    const patterns = getWinPatterns();
+    for (const pattern of patterns) {
+        const firstCell = board[pattern[0]];
+        if (firstCell && pattern.every(index => board[index] === firstCell)) {
             if (options.highlight) {
-                cells[a].classList.add('winner');
-                cells[b].classList.add('winner');
-                cells[c].classList.add('winner');
-                drawWinningLine(i);
+                pattern.forEach(index => {
+                    cells[index].classList.add('winner');
+                });
+                drawWinningLine(pattern);
             }
-            return board[a];
+            return firstCell;
         }
     }
     return null;
 }
 
 /**
- * Draw the winning line animation
- * @param {number} patternIndex - Index of the winning pattern in winPatterns array
+ * Draw the winning line animation based on winning cell positions
+ * @param {number[]} winningPattern - Array of winning cell indices
  */
-function drawWinningLine(patternIndex) {
+function drawWinningLine(winningPattern) {
     const svg = document.getElementById('winning-line');
     const line = document.getElementById('win-line');
 
-    // Line coordinates for each winning pattern (in percentage of board)
-    // Patterns: rows (0,1,2), columns (3,4,5), diagonals (6,7)
-    const lineCoords = [
-        // Rows
-        { x1: 5, y1: 16.67, x2: 95, y2: 16.67 },   // Top row [0,1,2]
-        { x1: 5, y1: 50, x2: 95, y2: 50 },         // Middle row [3,4,5]
-        { x1: 5, y1: 83.33, x2: 95, y2: 83.33 },   // Bottom row [6,7,8]
-        // Columns
-        { x1: 16.67, y1: 5, x2: 16.67, y2: 95 },   // Left column [0,3,6]
-        { x1: 50, y1: 5, x2: 50, y2: 95 },         // Middle column [1,4,7]
-        { x1: 83.33, y1: 5, x2: 83.33, y2: 95 },   // Right column [2,5,8]
-        // Diagonals
-        { x1: 5, y1: 5, x2: 95, y2: 95 },          // Top-left to bottom-right [0,4,8]
-        { x1: 95, y1: 5, x2: 5, y2: 95 }           // Top-right to bottom-left [2,4,6]
-    ];
+    // Calculate line coordinates based on first and last cell of winning pattern
+    const firstIndex = winningPattern[0];
+    const lastIndex = winningPattern[winningPattern.length - 1];
 
-    const coords = lineCoords[patternIndex];
+    // Convert indices to row/col
+    const firstRow = Math.floor(firstIndex / boardSize);
+    const firstCol = firstIndex % boardSize;
+    const lastRow = Math.floor(lastIndex / boardSize);
+    const lastCol = lastIndex % boardSize;
+
+    // Calculate center positions as percentages
+    const cellSize = 100 / boardSize;
+    const x1 = (firstCol + 0.5) * cellSize;
+    const y1 = (firstRow + 0.5) * cellSize;
+    const x2 = (lastCol + 0.5) * cellSize;
+    const y2 = (lastRow + 0.5) * cellSize;
 
     // Set line coordinates
-    line.setAttribute('x1', coords.x1);
-    line.setAttribute('y1', coords.y1);
-    line.setAttribute('x2', coords.x2);
-    line.setAttribute('y2', coords.y2);
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
 
     // Reset animation by removing and re-adding the element
     line.style.animation = 'none';
@@ -1146,6 +1358,7 @@ function findWinningMove(player) {
 
 function endGame(result) {
     gameActive = false;
+    const currentStats = getCurrentStats();
 
     if (result === 'draw') {
         resultDisplay.textContent = t('draw');
@@ -1155,9 +1368,9 @@ function endGame(result) {
         triggerHaptic(30); // Draw haptic pattern
 
         if (gameMode === 'pvp') {
-            stats.pvp.draws++;
+            currentStats.pvp.draws++;
         } else {
-            stats.ai[aiDifficulty].draws++;
+            currentStats.ai[aiDifficulty].draws++;
         }
     } else {
         if (gameMode === 'pvp') {
@@ -1166,9 +1379,9 @@ function endGame(result) {
             playWinSound();
             triggerHaptic([50, 50, 50]); // Win haptic pattern
             if (result === 'X') {
-                stats.pvp.player1Wins++;
+                currentStats.pvp.player1Wins++;
             } else {
-                stats.pvp.player2Wins++;
+                currentStats.pvp.player2Wins++;
             }
         } else {
             if (result === 'X') {
@@ -1176,13 +1389,13 @@ function endGame(result) {
                 resultDisplay.className = 'win';
                 playWinSound();
                 triggerHaptic([50, 50, 50]); // Win haptic pattern
-                stats.ai[aiDifficulty].wins++;
+                currentStats.ai[aiDifficulty].wins++;
             } else {
                 resultDisplay.textContent = t('aiWins');
                 resultDisplay.className = 'lose';
                 playLoseSound();
                 triggerHaptic([100, 50, 100]); // Lose haptic pattern
-                stats.ai[aiDifficulty].losses++;
+                currentStats.ai[aiDifficulty].losses++;
             }
         }
         turnDisplay.textContent = t('gameOver');
@@ -1227,14 +1440,25 @@ function getMediumMove(available) {
     const blockingMove = findWinningMove('X');
     if (blockingMove !== null) return blockingMove;
 
+    // Calculate center position(s) for current board size
+    const center = Math.floor(boardSize / 2);
+    const centerIndex = center * boardSize + center;
+
     // For non-critical moves, add some randomness for medium difficulty
     // 60% chance to take center if available
-    if (Math.random() < 0.6 && available.includes(4)) {
-        return 4;
+    if (Math.random() < 0.6 && available.includes(centerIndex)) {
+        return centerIndex;
     }
 
+    // Calculate corners for current board size
+    const corners = [
+        0,                              // Top-left
+        boardSize - 1,                  // Top-right
+        boardSize * (boardSize - 1),    // Bottom-left
+        boardSize * boardSize - 1       // Bottom-right
+    ].filter(c => available.includes(c));
+
     // 50% chance to take a corner
-    const corners = [0, 2, 6, 8].filter(c => available.includes(c));
     if (Math.random() < 0.5 && corners.length > 0) {
         return corners[Math.floor(Math.random() * corners.length)];
     }
@@ -1243,15 +1467,119 @@ function getMediumMove(available) {
     return getEasyMove(available);
 }
 
+/**
+ * Calculate appropriate search depth based on board state
+ */
+function getSearchDepth() {
+    const emptyCells = board.filter(cell => cell === '').length;
+
+    if (boardSize === 3) {
+        return 20; // Full search for 3x3 (max 9 moves)
+    } else if (boardSize === 4) {
+        // 4x4: limit depth based on game progress
+        if (emptyCells > 12) return 4;
+        if (emptyCells > 8) return 6;
+        return 8;
+    } else {
+        // 5x5: more aggressive limiting
+        if (emptyCells > 20) return 3;
+        if (emptyCells > 15) return 4;
+        if (emptyCells > 10) return 5;
+        return 6;
+    }
+}
+
+/**
+ * Heuristic evaluation for non-terminal board states
+ * Positive = good for AI, Negative = good for player
+ */
+function evaluateBoard() {
+    let score = 0;
+    const patterns = getWinPatterns();
+
+    for (const line of patterns) {
+        const cells = line.map(i => board[i]);
+        const aiCount = cells.filter(c => c === 'O').length;
+        const playerCount = cells.filter(c => c === 'X').length;
+
+        // Only score lines that aren't blocked
+        if (aiCount > 0 && playerCount === 0) {
+            // AI has potential in this line
+            score += Math.pow(10, aiCount - 1);
+        } else if (playerCount > 0 && aiCount === 0) {
+            // Player has potential in this line
+            score -= Math.pow(10, playerCount - 1);
+        }
+    }
+
+    // Bonus for center control (more important in larger boards)
+    const center = Math.floor(boardSize / 2);
+    const centerIndex = center * boardSize + center;
+    if (board[centerIndex] === 'O') score += 3;
+    if (board[centerIndex] === 'X') score -= 3;
+
+    return score;
+}
+
+/**
+ * Order moves to improve alpha-beta pruning efficiency
+ */
+function orderMoves(emptyCells) {
+    const center = Math.floor(boardSize / 2);
+    const centerIndex = center * boardSize + center;
+
+    return [...emptyCells].sort((a, b) => {
+        // Prioritize center
+        const aIsCenter = a === centerIndex ? 1 : 0;
+        const bIsCenter = b === centerIndex ? 1 : 0;
+        if (aIsCenter !== bIsCenter) return bIsCenter - aIsCenter;
+
+        // Prioritize cells adjacent to existing pieces
+        const aHasNeighbor = hasAdjacentPiece(a) ? 1 : 0;
+        const bHasNeighbor = hasAdjacentPiece(b) ? 1 : 0;
+        return bHasNeighbor - aHasNeighbor;
+    });
+}
+
+/**
+ * Check if a cell has an adjacent piece
+ */
+function hasAdjacentPiece(index) {
+    const row = Math.floor(index / boardSize);
+    const col = index % boardSize;
+
+    for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const newRow = row + dr;
+            const newCol = col + dc;
+            if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize) {
+                if (board[newRow * boardSize + newCol] !== '') return true;
+            }
+        }
+    }
+    return false;
+}
+
 function getHardMove() {
+    // First check for immediate winning move
+    const winningMove = findWinningMove('O');
+    if (winningMove !== null) return winningMove;
+
+    // Then check for blocking move
+    const blockingMove = findWinningMove('X');
+    if (blockingMove !== null) return blockingMove;
+
     let bestScore = -Infinity;
     let bestMove = null;
 
     const available = board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
+    const orderedMoves = orderMoves(available);
+    const maxDepth = getSearchDepth();
 
-    for (const move of available) {
+    for (const move of orderedMoves) {
         board[move] = 'O';
-        const score = minimax(board, 0, false, -Infinity, Infinity);
+        const score = minimax(0, maxDepth, false, -Infinity, Infinity);
         board[move] = '';
 
         if (score > bestScore) {
@@ -1264,26 +1592,33 @@ function getHardMove() {
 }
 
 /**
- * Minimax algorithm with alpha-beta pruning
- * @param {Array} board - The game board
+ * Minimax algorithm with alpha-beta pruning and depth limiting
  * @param {number} depth - Current depth in the tree
+ * @param {number} maxDepth - Maximum search depth
  * @param {boolean} isMaximizing - True if maximizing player (AI)
  * @param {number} alpha - Best value maximizer can guarantee
  * @param {number} beta - Best value minimizer can guarantee
  * @returns {number} - The best score for this position
  */
-function minimax(board, depth, isMaximizing, alpha = -Infinity, beta = Infinity) {
+function minimax(depth, maxDepth, isMaximizing, alpha, beta) {
     const winner = checkWinner();
-    if (winner === 'O') return 10 - depth;
-    if (winner === 'X') return depth - 10;
+    if (winner === 'O') return 100 - depth; // Prefer faster wins
+    if (winner === 'X') return depth - 100; // Prefer slower losses
     if (board.every(cell => cell !== '')) return 0;
+
+    // Depth limit reached - use heuristic evaluation
+    if (depth >= maxDepth) {
+        return evaluateBoard();
+    }
+
+    const totalCells = boardSize * boardSize;
 
     if (isMaximizing) {
         let bestScore = -Infinity;
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < totalCells; i++) {
             if (board[i] === '') {
                 board[i] = 'O';
-                const score = minimax(board, depth + 1, false, alpha, beta);
+                const score = minimax(depth + 1, maxDepth, false, alpha, beta);
                 board[i] = '';
                 bestScore = Math.max(score, bestScore);
                 alpha = Math.max(alpha, score);
@@ -1296,10 +1631,10 @@ function minimax(board, depth, isMaximizing, alpha = -Infinity, beta = Infinity)
         return bestScore;
     } else {
         let bestScore = Infinity;
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < totalCells; i++) {
             if (board[i] === '') {
                 board[i] = 'X';
-                const score = minimax(board, depth + 1, true, alpha, beta);
+                const score = minimax(depth + 1, maxDepth, true, alpha, beta);
                 board[i] = '';
                 bestScore = Math.min(score, bestScore);
                 beta = Math.min(beta, score);
