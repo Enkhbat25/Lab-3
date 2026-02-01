@@ -58,7 +58,11 @@ const translations = {
         helpTip2: 'Watch for opponent\'s winning moves',
         helpTip3: 'Try to create two ways to win',
         soundOn: '🔊 Sound On',
-        soundOff: '🔇 Sound Off'
+        soundOff: '🔇 Sound Off',
+        undo: 'Undo',
+        whoGoesFirst: 'Who goes first?',
+        youFirst: 'You (X)',
+        aiFirst: 'AI (O)'
     },
     mn: {
         title: 'Икс-Тэг',
@@ -118,7 +122,11 @@ const translations = {
         helpTip2: 'Өрсөлдөгчийн ялах боломжийг хянаарай',
         helpTip3: 'Хоёр ялах замыг бий болго',
         soundOn: '🔊 Дуу асаалттай',
-        soundOff: '🔇 Дуу унтраалттай'
+        soundOff: '🔇 Дуу унтраалттай',
+        undo: 'Буцаах',
+        whoGoesFirst: 'Хэн эхлэх вэ?',
+        youFirst: 'Та (X)',
+        aiFirst: 'AI (O)'
     },
     ru: {
         title: 'Крестики-Нолики',
@@ -178,7 +186,11 @@ const translations = {
         helpTip2: 'Следите за выигрышными ходами противника',
         helpTip3: 'Создавайте две возможности для победы',
         soundOn: '🔊 Звук вкл',
-        soundOff: '🔇 Звук выкл'
+        soundOff: '🔇 Звук выкл',
+        undo: 'Отменить',
+        whoGoesFirst: 'Кто ходит первым?',
+        youFirst: 'Вы (X)',
+        aiFirst: 'ИИ (O)'
     },
     ko: {
         title: '틱택토',
@@ -238,7 +250,11 @@ const translations = {
         helpTip2: '상대방의 승리 수를 주시하세요',
         helpTip3: '두 가지 승리 방법을 만드세요',
         soundOn: '🔊 소리 켜짐',
-        soundOff: '🔇 소리 꺼짐'
+        soundOff: '🔇 소리 꺼짐',
+        undo: '실행 취소',
+        whoGoesFirst: '누가 먼저 시작할까요?',
+        youFirst: '당신 (X)',
+        aiFirst: 'AI (O)'
     },
     ja: {
         title: '三目並べ',
@@ -298,7 +314,11 @@ const translations = {
         helpTip2: '相手の勝ち筋に注意',
         helpTip3: '2つの勝ち筋を作りましょう',
         soundOn: '🔊 サウンドON',
-        soundOff: '🔇 サウンドOFF'
+        soundOff: '🔇 サウンドOFF',
+        undo: '元に戻す',
+        whoGoesFirst: '先手を選択',
+        youFirst: 'あなた (X)',
+        aiFirst: 'AI (O)'
     },
     zh: {
         title: '井字棋',
@@ -358,7 +378,11 @@ const translations = {
         helpTip2: '注意对手的获胜机会',
         helpTip3: '尝试创造两种获胜方式',
         soundOn: '🔊 声音开启',
-        soundOff: '🔇 声音关闭'
+        soundOff: '🔇 声音关闭',
+        undo: '撤销',
+        whoGoesFirst: '谁先走？',
+        youFirst: '你 (X)',
+        aiFirst: 'AI (O)'
     }
 };
 
@@ -482,6 +506,8 @@ let currentPlayer = 'X';
 let gameMode = 'pvp';
 let aiDifficulty = 'medium';
 let gameActive = true;
+let moveHistory = [];
+let playerGoesFirst = true;
 
 // Theme
 let isDarkMode = localStorage.getItem('tictactoe-theme') !== 'light';
@@ -638,6 +664,20 @@ function startAI(difficulty) {
     aiDifficulty = difficulty;
     const diffText = t(difficulty);
     modeDisplay.textContent = `${t('vsAI')} (${diffText})`;
+    showFirstMoveChoice();
+}
+
+function showFirstMoveChoice() {
+    document.getElementById('first-move-modal').classList.remove('hidden');
+}
+
+function hideFirstMoveChoice() {
+    document.getElementById('first-move-modal').classList.add('hidden');
+}
+
+function selectFirstMove(playerFirst) {
+    playerGoesFirst = playerFirst;
+    hideFirstMoveChoice();
     initGame();
     showScreen(gameScreen);
 }
@@ -646,6 +686,7 @@ function initGame() {
     board = ['', '', '', '', '', '', '', '', ''];
     currentPlayer = 'X';
     gameActive = true;
+    moveHistory = [];
     resultDisplay.classList.add('hidden');
     resultDisplay.className = 'hidden';
 
@@ -654,6 +695,88 @@ function initGame() {
         cell.className = 'cell';
     });
 
+    updateUndoButton();
+    updateTurnDisplay();
+
+    // If AI goes first, make AI move
+    if (gameMode === 'ai' && !playerGoesFirst) {
+        currentPlayer = 'O';
+        setTimeout(() => {
+            if (gameActive) {
+                const aiMove = getAIMove();
+                if (aiMove !== null) {
+                    makeMove(aiMove);
+                }
+            }
+        }, 500);
+    }
+}
+
+function updateUndoButton() {
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) {
+        // Disable if no moves or game is over
+        const canUndo = moveHistory.length > 0 && gameActive;
+        undoBtn.disabled = !canUndo;
+        undoBtn.style.opacity = canUndo ? '1' : '0.5';
+        undoBtn.style.cursor = canUndo ? 'pointer' : 'not-allowed';
+    }
+}
+
+function undoMove() {
+    if (moveHistory.length === 0 || !gameActive) return;
+
+    if (gameMode === 'ai') {
+        // In AI mode, undo both AI's move and player's move
+        if (moveHistory.length >= 2) {
+            // Undo AI's move
+            const aiMove = moveHistory.pop();
+            board[aiMove.index] = '';
+            cells[aiMove.index].textContent = '';
+            cells[aiMove.index].className = 'cell';
+
+            // Undo player's move
+            const playerMove = moveHistory.pop();
+            board[playerMove.index] = '';
+            cells[playerMove.index].textContent = '';
+            cells[playerMove.index].className = 'cell';
+
+            currentPlayer = 'X';
+        } else if (moveHistory.length === 1 && !playerGoesFirst) {
+            // AI went first, only one move to undo
+            const aiMove = moveHistory.pop();
+            board[aiMove.index] = '';
+            cells[aiMove.index].textContent = '';
+            cells[aiMove.index].className = 'cell';
+            currentPlayer = 'O';
+            // AI needs to move again
+            setTimeout(() => {
+                if (gameActive) {
+                    const aiMove = getAIMove();
+                    if (aiMove !== null) {
+                        makeMove(aiMove);
+                    }
+                }
+            }, 500);
+        } else if (moveHistory.length === 1 && playerGoesFirst) {
+            // Player went first, undo player's move
+            const playerMove = moveHistory.pop();
+            board[playerMove.index] = '';
+            cells[playerMove.index].textContent = '';
+            cells[playerMove.index].className = 'cell';
+            currentPlayer = 'X';
+        }
+    } else {
+        // In PvP mode, undo last move
+        const lastMove = moveHistory.pop();
+        board[lastMove.index] = '';
+        cells[lastMove.index].textContent = '';
+        cells[lastMove.index].className = 'cell';
+        currentPlayer = lastMove.player;
+    }
+
+    playButtonSound();
+    updateUndoButton();
     updateTurnDisplay();
 }
 
@@ -695,6 +818,9 @@ function handleCellClick(cell) {
 }
 
 function makeMove(index) {
+    // Track move in history
+    moveHistory.push({ index: index, player: currentPlayer });
+
     board[index] = currentPlayer;
     const cell = cells[index];
     cell.textContent = currentPlayer;
@@ -710,6 +836,8 @@ function makeMove(index) {
         currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
         updateTurnDisplay();
     }
+
+    updateUndoButton();
 }
 
 function checkWinner() {

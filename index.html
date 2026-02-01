@@ -61,7 +61,17 @@
             <div id="result" class="hidden"></div>
             <div id="game-buttons">
                 <button onclick="restartGame()" data-i18n="playAgain">Play Again</button>
+                <button id="undo-btn" onclick="undoMove()" data-i18n="undo">Undo</button>
                 <button onclick="showMenu()" class="back-btn" data-i18n="mainMenuBtn">Main Menu</button>
+            </div>
+        </div>
+
+        <!-- First Move Choice Modal -->
+        <div id="first-move-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 data-i18n="whoGoesFirst">Who goes first?</h2>
+                <button onclick="selectFirstMove(true)" data-i18n="youFirst">You (X)</button>
+                <button onclick="selectFirstMove(false)" data-i18n="aiFirst">AI (O)</button>
             </div>
         </div>
 
