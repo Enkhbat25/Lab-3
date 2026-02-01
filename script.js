@@ -386,10 +386,62 @@ const translations = {
     }
 };
 
+// Safe localStorage wrapper
+const storage = {
+    get(key, defaultValue = null) {
+        try {
+            const item = localStorage.getItem(key);
+            return item ? JSON.parse(item) : defaultValue;
+        } catch (error) {
+            console.warn(`Failed to read ${key} from localStorage:`, error);
+            return defaultValue;
+        }
+    },
+
+    getString(key, defaultValue = null) {
+        try {
+            return localStorage.getItem(key) ?? defaultValue;
+        } catch (error) {
+            console.warn(`Failed to read ${key} from localStorage:`, error);
+            return defaultValue;
+        }
+    },
+
+    set(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch (error) {
+            console.warn(`Failed to write ${key} to localStorage:`, error);
+            return false;
+        }
+    },
+
+    setString(key, value) {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (error) {
+            console.warn(`Failed to write ${key} to localStorage:`, error);
+            return false;
+        }
+    },
+
+    remove(key) {
+        try {
+            localStorage.removeItem(key);
+            return true;
+        } catch (error) {
+            console.warn(`Failed to remove ${key} from localStorage:`, error);
+            return false;
+        }
+    }
+};
+
 // Sound System
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
-let soundEnabled = localStorage.getItem('tictactoe-sound') !== 'false';
+let soundEnabled = storage.getString('tictactoe-sound') !== 'false';
 
 function initAudio() {
     if (!audioCtx) {
@@ -451,7 +503,7 @@ function playButtonSound() {
 
 function toggleSound() {
     soundEnabled = !soundEnabled;
-    localStorage.setItem('tictactoe-sound', soundEnabled);
+    storage.setString('tictactoe-sound', soundEnabled);
     updateSoundButtonText();
     if (soundEnabled) {
         playButtonSound();
@@ -466,7 +518,7 @@ function updateSoundButtonText() {
 }
 
 // Current language
-let currentLang = localStorage.getItem('tictactoe-lang') || 'en';
+let currentLang = storage.getString('tictactoe-lang', 'en');
 
 function t(key) {
     return translations[currentLang][key] || translations['en'][key] || key;
@@ -474,7 +526,7 @@ function t(key) {
 
 function changeLanguage(lang) {
     currentLang = lang;
-    localStorage.setItem('tictactoe-lang', lang);
+    storage.setString('tictactoe-lang', lang);
     updateAllText();
     updateThemeButtonText();
     updateSoundButtonText();
@@ -508,9 +560,103 @@ let aiDifficulty = 'medium';
 let gameActive = true;
 let moveHistory = [];
 let playerGoesFirst = true;
+let focusedCellIndex = 0;
+
+// Haptic feedback utility
+function triggerHaptic(pattern = 10) {
+    if ('vibrate' in navigator) {
+        navigator.vibrate(pattern);
+    }
+}
+
+// Keyboard navigation for game board
+function initKeyboardNavigation() {
+    const boardElement = document.getElementById('board');
+    if (!boardElement) return;
+
+    boardElement.addEventListener('keydown', handleBoardKeydown);
+
+    // Make cells focusable
+    cells.forEach((cell, index) => {
+        cell.setAttribute('tabindex', index === 0 ? '0' : '-1');
+    });
+}
+
+function handleBoardKeydown(e) {
+    const gameScreenVisible = !document.getElementById('game').classList.contains('hidden');
+    if (!gameScreenVisible) return;
+
+    let newIndex = focusedCellIndex;
+
+    switch (e.key) {
+        case 'ArrowUp':
+            e.preventDefault();
+            newIndex = focusedCellIndex - 3;
+            if (newIndex < 0) newIndex += 9; // Wrap to bottom
+            break;
+        case 'ArrowDown':
+            e.preventDefault();
+            newIndex = focusedCellIndex + 3;
+            if (newIndex > 8) newIndex -= 9; // Wrap to top
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            newIndex = focusedCellIndex - 1;
+            if (newIndex < 0 || focusedCellIndex % 3 === 0) {
+                newIndex = focusedCellIndex + 2; // Wrap to right
+                if (focusedCellIndex < 3) newIndex = focusedCellIndex + 2;
+            }
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            newIndex = focusedCellIndex + 1;
+            if (newIndex > 8 || focusedCellIndex % 3 === 2) {
+                newIndex = focusedCellIndex - 2; // Wrap to left
+            }
+            break;
+        case 'Enter':
+        case ' ':
+            e.preventDefault();
+            if (cells[focusedCellIndex]) {
+                handleCellClick(cells[focusedCellIndex]);
+            }
+            return;
+        case 'Escape':
+            e.preventDefault();
+            newIndex = 0;
+            break;
+        // Number pad navigation (7,8,9 / 4,5,6 / 1,2,3)
+        case '7': newIndex = 0; break;
+        case '8': newIndex = 1; break;
+        case '9': newIndex = 2; break;
+        case '4': newIndex = 3; break;
+        case '5': newIndex = 4; break;
+        case '6': newIndex = 5; break;
+        case '1': newIndex = 6; break;
+        case '2': newIndex = 7; break;
+        case '3': newIndex = 8; break;
+        default:
+            return;
+    }
+
+    // Update focus
+    if (newIndex !== focusedCellIndex && newIndex >= 0 && newIndex <= 8) {
+        focusedCellIndex = newIndex;
+        updateCellFocus();
+    }
+}
+
+function updateCellFocus() {
+    cells.forEach((cell, index) => {
+        cell.setAttribute('tabindex', index === focusedCellIndex ? '0' : '-1');
+    });
+    if (cells[focusedCellIndex]) {
+        cells[focusedCellIndex].focus();
+    }
+}
 
 // Theme
-let isDarkMode = localStorage.getItem('tictactoe-theme') !== 'light';
+let isDarkMode = storage.getString('tictactoe-theme') !== 'light';
 
 function initTheme() {
     const themeBtn = document.getElementById('theme-toggle');
@@ -529,10 +675,10 @@ function toggleTheme() {
     isDarkMode = !isDarkMode;
     if (isDarkMode) {
         document.body.classList.remove('light-mode');
-        localStorage.setItem('tictactoe-theme', 'dark');
+        storage.setString('tictactoe-theme', 'dark');
     } else {
         document.body.classList.add('light-mode');
-        localStorage.setItem('tictactoe-theme', 'light');
+        storage.setString('tictactoe-theme', 'light');
     }
     updateThemeButtonText();
 }
@@ -542,7 +688,67 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initLanguage();
     updateSoundButtonText();
+    initKeyboardNavigation();
+    initAccessibility();
 });
+
+// Accessibility initialization
+function initAccessibility() {
+    // Add ARIA attributes to game board
+    const boardElement = document.getElementById('board');
+    if (boardElement) {
+        boardElement.setAttribute('role', 'grid');
+        boardElement.setAttribute('aria-label', 'Tic-tac-toe game board');
+        boardElement.setAttribute('aria-describedby', 'turn-display');
+    }
+
+    // Add ARIA attributes to cells
+    cells.forEach((cell, index) => {
+        cell.setAttribute('role', 'gridcell');
+        cell.setAttribute('aria-label', `Cell ${index + 1}, empty`);
+        cell.setAttribute('aria-disabled', 'false');
+    });
+
+    // Add live region for turn display
+    const turnDisplay = document.getElementById('turn-display');
+    if (turnDisplay) {
+        turnDisplay.setAttribute('aria-live', 'polite');
+        turnDisplay.setAttribute('aria-atomic', 'true');
+    }
+
+    // Add live region for result display
+    const resultDisplay = document.getElementById('result');
+    if (resultDisplay) {
+        resultDisplay.setAttribute('aria-live', 'assertive');
+        resultDisplay.setAttribute('aria-atomic', 'true');
+    }
+}
+
+// Update cell accessibility after move
+function updateCellAccessibility(index, player) {
+    const cell = cells[index];
+    if (cell) {
+        cell.setAttribute('aria-label', `Cell ${index + 1}, marked ${player}`);
+        cell.setAttribute('aria-pressed', 'true');
+        cell.setAttribute('aria-disabled', 'true');
+    }
+}
+
+// Update all cells accessibility when game ends
+function updateAllCellsDisabled(disabled) {
+    cells.forEach((cell, index) => {
+        cell.setAttribute('aria-disabled', disabled ? 'true' : (board[index] !== '' ? 'true' : 'false'));
+    });
+}
+
+// Reset cell accessibility for new game
+function resetCellAccessibility() {
+    cells.forEach((cell, index) => {
+        cell.setAttribute('aria-label', `Cell ${index + 1}, empty`);
+        cell.setAttribute('aria-pressed', 'false');
+        cell.setAttribute('aria-disabled', 'false');
+    });
+}
 
 // DOM Elements
 const menuScreen = document.getElementById('menu');
@@ -566,22 +772,18 @@ const winPatterns = [
 let stats = loadStats();
 
 function loadStats() {
-    const saved = localStorage.getItem('tictactoe-stats');
-    if (saved) {
-        return JSON.parse(saved);
-    }
-    return {
+    return storage.get('tictactoe-stats', {
         pvp: { player1Wins: 0, player2Wins: 0, draws: 0 },
         ai: {
             easy: { wins: 0, losses: 0, draws: 0 },
             medium: { wins: 0, losses: 0, draws: 0 },
             hard: { wins: 0, losses: 0, draws: 0 }
         }
-    };
+    });
 }
 
 function saveStats() {
-    localStorage.setItem('tictactoe-stats', JSON.stringify(stats));
+    storage.set('tictactoe-stats', stats);
 }
 
 // Screen Navigation
@@ -695,6 +897,9 @@ function initGame() {
         cell.className = 'cell';
     });
 
+    // Reset accessibility attributes
+    resetCellAccessibility();
+
     updateUndoButton();
     updateTurnDisplay();
 
@@ -803,6 +1008,9 @@ function handleCellClick(cell) {
     if (board[index] !== '' || !gameActive) return;
     if (gameMode === 'ai' && currentPlayer === 'O') return;
 
+    // Trigger haptic feedback on cell tap
+    triggerHaptic(10);
+
     makeMove(index);
 
     if (gameActive && gameMode === 'ai') {
@@ -826,8 +1034,9 @@ function makeMove(index) {
     cell.textContent = currentPlayer;
     cell.classList.add(currentPlayer.toLowerCase());
     playMoveSound(currentPlayer);
+    updateCellAccessibility(index, currentPlayer);
 
-    const winner = checkWinner();
+    const winner = checkWinner({ highlight: true });
     if (winner) {
         endGame(winner);
     } else if (board.every(cell => cell !== '')) {
@@ -840,14 +1049,40 @@ function makeMove(index) {
     updateUndoButton();
 }
 
-function checkWinner() {
+/**
+ * Check for a winner on the board
+ * @param {Object} options - Optional configuration
+ * @param {boolean} options.highlight - If true, add winner class to winning cells
+ * @returns {string|null} - Winner mark ('X' or 'O') or null
+ */
+function checkWinner(options = {}) {
     for (const pattern of winPatterns) {
         const [a, b, c] = pattern;
         if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            cells[a].classList.add('winner');
-            cells[b].classList.add('winner');
-            cells[c].classList.add('winner');
+            if (options.highlight) {
+                cells[a].classList.add('winner');
+                cells[b].classList.add('winner');
+                cells[c].classList.add('winner');
+            }
             return board[a];
+        }
+    }
+    return null;
+}
+
+/**
+ * Find a winning move for the specified player
+ * @param {string} player - 'X' or 'O'
+ * @returns {number|null} - Index of winning move or null
+ */
+function findWinningMove(player) {
+    const available = board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
+    for (const move of available) {
+        board[move] = player;
+        const winner = checkWinner();
+        board[move] = '';
+        if (winner === player) {
+            return move;
         }
     }
     return null;
@@ -861,6 +1096,7 @@ function endGame(result) {
         resultDisplay.className = 'draw';
         turnDisplay.textContent = t('gameOver');
         playDrawSound();
+        triggerHaptic(30); // Draw haptic pattern
 
         if (gameMode === 'pvp') {
             stats.pvp.draws++;
@@ -872,6 +1108,7 @@ function endGame(result) {
             resultDisplay.textContent = result === 'X' ? t('player1Wins') : t('player2Wins');
             resultDisplay.className = 'win';
             playWinSound();
+            triggerHaptic([50, 50, 50]); // Win haptic pattern
             if (result === 'X') {
                 stats.pvp.player1Wins++;
             } else {
@@ -882,11 +1119,13 @@ function endGame(result) {
                 resultDisplay.textContent = t('youWin');
                 resultDisplay.className = 'win';
                 playWinSound();
+                triggerHaptic([50, 50, 50]); // Win haptic pattern
                 stats.ai[aiDifficulty].wins++;
             } else {
                 resultDisplay.textContent = t('aiWins');
                 resultDisplay.className = 'lose';
                 playLoseSound();
+                triggerHaptic([100, 50, 100]); // Lose haptic pattern
                 stats.ai[aiDifficulty].losses++;
             }
         }
@@ -894,6 +1133,7 @@ function endGame(result) {
     }
 
     resultDisplay.classList.remove('hidden');
+    updateAllCellsDisabled(true);
     saveStats();
 }
 
@@ -923,33 +1163,24 @@ function getEasyMove(available) {
 }
 
 function getMediumMove(available) {
-    // 70% chance to take winning move
-    if (Math.random() < 0.7) {
-        for (const move of available) {
-            board[move] = 'O';
-            if (checkWinnerSimple() === 'O') {
-                board[move] = '';
-                return move;
-            }
-            board[move] = '';
-        }
-    }
+    // ALWAYS take a winning move if one exists (priority 1)
+    const winningMove = findWinningMove('O');
+    if (winningMove !== null) return winningMove;
 
-    // 50% chance to block player's winning move
-    if (Math.random() < 0.5) {
-        for (const move of available) {
-            board[move] = 'X';
-            if (checkWinnerSimple() === 'X') {
-                board[move] = '';
-                return move;
-            }
-            board[move] = '';
-        }
-    }
+    // ALWAYS block opponent's winning move (priority 2)
+    const blockingMove = findWinningMove('X');
+    if (blockingMove !== null) return blockingMove;
 
-    // 40% chance to take center
-    if (Math.random() < 0.4 && available.includes(4)) {
+    // For non-critical moves, add some randomness for medium difficulty
+    // 60% chance to take center if available
+    if (Math.random() < 0.6 && available.includes(4)) {
         return 4;
+    }
+
+    // 50% chance to take a corner
+    const corners = [0, 2, 6, 8].filter(c => available.includes(c));
+    if (Math.random() < 0.5 && corners.length > 0) {
+        return corners[Math.floor(Math.random() * corners.length)];
     }
 
     // Otherwise random move
@@ -964,7 +1195,7 @@ function getHardMove() {
 
     for (const move of available) {
         board[move] = 'O';
-        const score = minimax(board, 0, false);
+        const score = minimax(board, 0, false, -Infinity, Infinity);
         board[move] = '';
 
         if (score > bestScore) {
@@ -976,8 +1207,17 @@ function getHardMove() {
     return bestMove;
 }
 
-function minimax(board, depth, isMaximizing) {
-    const winner = checkWinnerSimple();
+/**
+ * Minimax algorithm with alpha-beta pruning
+ * @param {Array} board - The game board
+ * @param {number} depth - Current depth in the tree
+ * @param {boolean} isMaximizing - True if maximizing player (AI)
+ * @param {number} alpha - Best value maximizer can guarantee
+ * @param {number} beta - Best value minimizer can guarantee
+ * @returns {number} - The best score for this position
+ */
+function minimax(board, depth, isMaximizing, alpha = -Infinity, beta = Infinity) {
+    const winner = checkWinner();
     if (winner === 'O') return 10 - depth;
     if (winner === 'X') return depth - 10;
     if (board.every(cell => cell !== '')) return 0;
@@ -987,9 +1227,14 @@ function minimax(board, depth, isMaximizing) {
         for (let i = 0; i < 9; i++) {
             if (board[i] === '') {
                 board[i] = 'O';
-                const score = minimax(board, depth + 1, false);
+                const score = minimax(board, depth + 1, false, alpha, beta);
                 board[i] = '';
                 bestScore = Math.max(score, bestScore);
+                alpha = Math.max(alpha, score);
+                // Alpha-beta pruning
+                if (beta <= alpha) {
+                    break;
+                }
             }
         }
         return bestScore;
@@ -998,21 +1243,16 @@ function minimax(board, depth, isMaximizing) {
         for (let i = 0; i < 9; i++) {
             if (board[i] === '') {
                 board[i] = 'X';
-                const score = minimax(board, depth + 1, true);
+                const score = minimax(board, depth + 1, true, alpha, beta);
                 board[i] = '';
                 bestScore = Math.min(score, bestScore);
+                beta = Math.min(beta, score);
+                // Alpha-beta pruning
+                if (beta <= alpha) {
+                    break;
+                }
             }
         }
         return bestScore;
     }
-}
-
-function checkWinnerSimple() {
-    for (const pattern of winPatterns) {
-        const [a, b, c] = pattern;
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            return board[a];
-        }
-    }
-    return null;
 }
