@@ -897,6 +897,9 @@ function initGame() {
         cell.className = 'cell';
     });
 
+    // Hide winning line from previous game
+    hideWinningLine();
+
     // Reset accessibility attributes
     resetCellAccessibility();
 
@@ -1056,18 +1059,71 @@ function makeMove(index) {
  * @returns {string|null} - Winner mark ('X' or 'O') or null
  */
 function checkWinner(options = {}) {
-    for (const pattern of winPatterns) {
+    for (let i = 0; i < winPatterns.length; i++) {
+        const pattern = winPatterns[i];
         const [a, b, c] = pattern;
         if (board[a] && board[a] === board[b] && board[a] === board[c]) {
             if (options.highlight) {
                 cells[a].classList.add('winner');
                 cells[b].classList.add('winner');
                 cells[c].classList.add('winner');
+                drawWinningLine(i);
             }
             return board[a];
         }
     }
     return null;
+}
+
+/**
+ * Draw the winning line animation
+ * @param {number} patternIndex - Index of the winning pattern in winPatterns array
+ */
+function drawWinningLine(patternIndex) {
+    const svg = document.getElementById('winning-line');
+    const line = document.getElementById('win-line');
+
+    // Line coordinates for each winning pattern (in percentage of board)
+    // Patterns: rows (0,1,2), columns (3,4,5), diagonals (6,7)
+    const lineCoords = [
+        // Rows
+        { x1: 5, y1: 16.67, x2: 95, y2: 16.67 },   // Top row [0,1,2]
+        { x1: 5, y1: 50, x2: 95, y2: 50 },         // Middle row [3,4,5]
+        { x1: 5, y1: 83.33, x2: 95, y2: 83.33 },   // Bottom row [6,7,8]
+        // Columns
+        { x1: 16.67, y1: 5, x2: 16.67, y2: 95 },   // Left column [0,3,6]
+        { x1: 50, y1: 5, x2: 50, y2: 95 },         // Middle column [1,4,7]
+        { x1: 83.33, y1: 5, x2: 83.33, y2: 95 },   // Right column [2,5,8]
+        // Diagonals
+        { x1: 5, y1: 5, x2: 95, y2: 95 },          // Top-left to bottom-right [0,4,8]
+        { x1: 95, y1: 5, x2: 5, y2: 95 }           // Top-right to bottom-left [2,4,6]
+    ];
+
+    const coords = lineCoords[patternIndex];
+
+    // Set line coordinates
+    line.setAttribute('x1', coords.x1);
+    line.setAttribute('y1', coords.y1);
+    line.setAttribute('x2', coords.x2);
+    line.setAttribute('y2', coords.y2);
+
+    // Reset animation by removing and re-adding the element
+    line.style.animation = 'none';
+    line.offsetHeight; // Trigger reflow
+    line.style.animation = '';
+
+    // Show the SVG
+    svg.classList.remove('hidden');
+}
+
+/**
+ * Hide the winning line
+ */
+function hideWinningLine() {
+    const svg = document.getElementById('winning-line');
+    if (svg) {
+        svg.classList.add('hidden');
+    }
 }
 
 /**
