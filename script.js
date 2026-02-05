@@ -1046,16 +1046,44 @@ function getDefaultBoardStats() {
             easy: { wins: 0, losses: 0, draws: 0 },
             medium: { wins: 0, losses: 0, draws: 0 },
             hard: { wins: 0, losses: 0, draws: 0 }
-        }
+        },
+        asX: { wins: 0, losses: 0, draws: 0 },
+        asO: { wins: 0, losses: 0, draws: 0 },
+        streaks: {
+            currentWin: 0,
+            currentLoss: 0,
+            currentUnbeaten: 0,
+            bestWin: 0,
+            bestLoss: 0,
+            bestUnbeaten: 0
+        },
+        gameHistory: []
     };
 }
 
 function loadStats() {
-    return storage.get('tictactoe-stats-v2', {
+    const loaded = storage.get('tictactoe-stats-v3', null);
+    if (loaded) return loaded;
+
+    // Try to migrate from v2
+    const v2 = storage.get('tictactoe-stats-v2', null);
+    if (v2) {
+        const migrated = {};
+        for (const size of ['3x3', '4x4', '5x5']) {
+            migrated[size] = getDefaultBoardStats();
+            if (v2[size]) {
+                migrated[size].pvp = v2[size].pvp || migrated[size].pvp;
+                migrated[size].ai = v2[size].ai || migrated[size].ai;
+            }
+        }
+        return migrated;
+    }
+
+    return {
         '3x3': getDefaultBoardStats(),
         '4x4': getDefaultBoardStats(),
         '5x5': getDefaultBoardStats()
-    });
+    };
 }
 
 function getCurrentStats() {
@@ -1063,11 +1091,115 @@ function getCurrentStats() {
     if (!stats[key]) {
         stats[key] = getDefaultBoardStats();
     }
+    // Ensure all fields exist
+    if (!stats[key].streaks) {
+        stats[key].streaks = getDefaultBoardStats().streaks;
+    }
+    if (!stats[key].asX) {
+        stats[key].asX = { wins: 0, losses: 0, draws: 0 };
+    }
+    if (!stats[key].asO) {
+        stats[key].asO = { wins: 0, losses: 0, draws: 0 };
+    }
+    if (!stats[key].gameHistory) {
+        stats[key].gameHistory = [];
+    }
     return stats[key];
 }
 
 function saveStats() {
-    storage.set('tictactoe-stats', stats);
+    storage.set('tictactoe-stats-v3', stats);
+}
+
+// Win rate calculation
+function calculateWinRate(wins, total) {
+    if (total === 0) return 'N/A';
+    return ((wins / total) * 100).toFixed(1) + '%';
+}
+
+// Update streaks after a game
+function updateStreaks(result, currentStats) {
+    const streaks = currentStats.streaks;
+    let newBest = false;
+
+    if (result === 'win') {
+        streaks.currentWin++;
+        streaks.currentLoss = 0;
+        streaks.currentUnbeaten++;
+        if (streaks.currentWin > streaks.bestWin) {
+            streaks.bestWin = streaks.currentWin;
+            newBest = true;
+        }
+    } else if (result === 'loss') {
+        streaks.currentLoss++;
+        streaks.currentWin = 0;
+        streaks.currentUnbeaten = 0;
+        if (streaks.currentLoss > streaks.bestLoss) {
+            streaks.bestLoss = streaks.currentLoss;
+        }
+    } else {
+        streaks.currentWin = 0;
+        streaks.currentLoss = 0;
+        streaks.currentUnbeaten++;
+    }
+
+    if (streaks.currentUnbeaten > streaks.bestUnbeaten) {
+        streaks.bestUnbeaten = streaks.currentUnbeaten;
+    }
+
+    return newBest;
+}
+
+// Log a game to history
+function logGameToHistory(currentStats, gameResult, moves) {
+    const gameRecord = {
+        timestamp: new Date().toISOString(),
+        mode: gameMode,
+        result: gameResult,
+        totalMoves: moves,
+        boardSize: `${boardSize}x${boardSize}`
+    };
+
+    currentStats.gameHistory.push(gameRecord);
+
+    // Keep only last 50 games per board size
+    if (currentStats.gameHistory.length > 50) {
+        currentStats.gameHistory = currentStats.gameHistory.slice(-50);
+    }
+}
+
+// Export stats to CSV
+function exportStatsToCSV() {
+    let csv = '# Tic-Tac-Toe Statistics Export\\n';
+    csv += '# Generated: ' + new Date().toISOString() + '\\n\\n';
+
+    csv += 'Board Size,Mode,Total Games,Wins,Losses,Draws,Win Rate\\n';
+
+    for (const size of ['3x3', '4x4', '5x5']) {
+        const sizeStats = stats[size] || getDefaultBoardStats();
+
+        // PvP stats
+        const pvpTotal = sizeStats.pvp.player1Wins + sizeStats.pvp.player2Wins + sizeStats.pvp.draws;
+        csv += `${size},PvP,${pvpTotal},${sizeStats.pvp.player1Wins},${sizeStats.pvp.player2Wins},${sizeStats.pvp.draws},${calculateWinRate(sizeStats.pvp.player1Wins, pvpTotal)}\\n`;
+
+        // AI stats
+        for (const diff of ['easy', 'medium', 'hard']) {
+            const aiStats = sizeStats.ai[diff];
+            const aiTotal = aiStats.wins + aiStats.losses + aiStats.draws;
+            csv += `${size},vs AI (${diff}),${aiTotal},${aiStats.wins},${aiStats.losses},${aiStats.draws},${calculateWinRate(aiStats.wins, aiTotal)}\\n`;
+        }
+    }
+
+    // Create download
+    const blob = new Blob([csv.replace(/\\n/g, '\\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tictactoe_stats_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // Screen Navigation
@@ -1309,29 +1441,98 @@ function updateStatsDisplay() {
     const content = document.getElementById('stats-content');
     let html = '';
 
+    // Calculate overall stats
+    let totalGames = 0;
+    let totalWins = 0;
+    let overallStreaks = { currentWin: 0, bestWin: 0, bestUnbeaten: 0 };
+
     // Generate stats for each board size
     const sizes = ['3x3', '4x4', '5x5'];
     for (const size of sizes) {
         const sizeStats = stats[size] || getDefaultBoardStats();
+
+        // Ensure streaks exist
+        if (!sizeStats.streaks) sizeStats.streaks = getDefaultBoardStats().streaks;
+        if (!sizeStats.asX) sizeStats.asX = { wins: 0, losses: 0, draws: 0 };
+        if (!sizeStats.asO) sizeStats.asO = { wins: 0, losses: 0, draws: 0 };
+
+        // Calculate totals for this size
+        const pvpTotal = sizeStats.pvp.player1Wins + sizeStats.pvp.player2Wins + sizeStats.pvp.draws;
+        const aiEasyTotal = sizeStats.ai.easy.wins + sizeStats.ai.easy.losses + sizeStats.ai.easy.draws;
+        const aiMedTotal = sizeStats.ai.medium.wins + sizeStats.ai.medium.losses + sizeStats.ai.medium.draws;
+        const aiHardTotal = sizeStats.ai.hard.wins + sizeStats.ai.hard.losses + sizeStats.ai.hard.draws;
+        const aiTotal = aiEasyTotal + aiMedTotal + aiHardTotal;
+        const aiWins = sizeStats.ai.easy.wins + sizeStats.ai.medium.wins + sizeStats.ai.hard.wins;
+
+        totalGames += pvpTotal + aiTotal;
+        totalWins += sizeStats.pvp.player1Wins + aiWins;
+
+        // Track best streaks
+        if (sizeStats.streaks.bestWin > overallStreaks.bestWin) {
+            overallStreaks.bestWin = sizeStats.streaks.bestWin;
+        }
+        if (sizeStats.streaks.currentWin > overallStreaks.currentWin) {
+            overallStreaks.currentWin = sizeStats.streaks.currentWin;
+        }
+
+        // Symbol stats
+        const xTotal = sizeStats.asX.wins + sizeStats.asX.losses + sizeStats.asX.draws;
+        const oTotal = sizeStats.asO.wins + sizeStats.asO.losses + sizeStats.asO.draws;
+
         html += `
             <div class="stats-board-section">
                 <h3 class="board-size-header">${size}</h3>
+
+                <div class="stats-section">
+                    <h4>Win Rates</h4>
+                    <p>vs Easy AI: <span class="win-rate">${calculateWinRate(sizeStats.ai.easy.wins, aiEasyTotal)}</span></p>
+                    <p>vs Medium AI: <span class="win-rate">${calculateWinRate(sizeStats.ai.medium.wins, aiMedTotal)}</span></p>
+                    <p>vs Hard AI: <span class="win-rate">${calculateWinRate(sizeStats.ai.hard.wins, aiHardTotal)}</span></p>
+                    <p>PvP: <span class="win-rate">${calculateWinRate(sizeStats.pvp.player1Wins, pvpTotal)}</span></p>
+                </div>
+
+                <div class="stats-section">
+                    <h4>Win Rate by Symbol</h4>
+                    <p>As X: <span class="win-rate">${calculateWinRate(sizeStats.asX.wins, xTotal)}</span> (${sizeStats.asX.wins}/${xTotal})</p>
+                    <p>As O: <span class="win-rate">${calculateWinRate(sizeStats.asO.wins, oTotal)}</span> (${sizeStats.asO.wins}/${oTotal})</p>
+                </div>
+
+                <div class="stats-section">
+                    <h4>Streaks</h4>
+                    <p>Current: <span class="streak ${sizeStats.streaks.currentWin > 0 ? 'hot' : ''}">${sizeStats.streaks.currentWin > 0 ? sizeStats.streaks.currentWin + ' wins' : (sizeStats.streaks.currentLoss > 0 ? sizeStats.streaks.currentLoss + ' losses' : 'None')}</span></p>
+                    <p>Best Win Streak: <span>${sizeStats.streaks.bestWin}</span></p>
+                    <p>Best Unbeaten: <span>${sizeStats.streaks.bestUnbeaten}</span></p>
+                </div>
+
                 <div class="stats-section">
                     <h4>${t('statsPvP')}</h4>
-                    <p>${t('totalGames')}: <span>${sizeStats.pvp.player1Wins + sizeStats.pvp.player2Wins + sizeStats.pvp.draws}</span></p>
+                    <p>${t('totalGames')}: <span>${pvpTotal}</span></p>
                     <p>${t('p1Wins')}: <span>${sizeStats.pvp.player1Wins}</span> | ${t('p2Wins')}: <span>${sizeStats.pvp.player2Wins}</span> | ${t('draws')}: <span>${sizeStats.pvp.draws}</span></p>
                 </div>
+
                 <div class="stats-section">
                     <h4>${t('vsAI')}</h4>
-                    <p><strong>${t('easy')}:</strong> ${t('wins')}: <span>${sizeStats.ai.easy.wins}</span> | ${t('losses')}: <span>${sizeStats.ai.easy.losses}</span> | ${t('draws')}: <span>${sizeStats.ai.easy.draws}</span></p>
-                    <p><strong>${t('medium')}:</strong> ${t('wins')}: <span>${sizeStats.ai.medium.wins}</span> | ${t('losses')}: <span>${sizeStats.ai.medium.losses}</span> | ${t('draws')}: <span>${sizeStats.ai.medium.draws}</span></p>
-                    <p><strong>${t('hard')}:</strong> ${t('wins')}: <span>${sizeStats.ai.hard.wins}</span> | ${t('losses')}: <span>${sizeStats.ai.hard.losses}</span> | ${t('draws')}: <span>${sizeStats.ai.hard.draws}</span></p>
+                    <p><strong>${t('easy')}:</strong> W: <span>${sizeStats.ai.easy.wins}</span> | L: <span>${sizeStats.ai.easy.losses}</span> | D: <span>${sizeStats.ai.easy.draws}</span></p>
+                    <p><strong>${t('medium')}:</strong> W: <span>${sizeStats.ai.medium.wins}</span> | L: <span>${sizeStats.ai.medium.losses}</span> | D: <span>${sizeStats.ai.medium.draws}</span></p>
+                    <p><strong>${t('hard')}:</strong> W: <span>${sizeStats.ai.hard.wins}</span> | L: <span>${sizeStats.ai.hard.losses}</span> | D: <span>${sizeStats.ai.hard.draws}</span></p>
                 </div>
             </div>
         `;
     }
 
-    content.innerHTML = html;
+    // Add overall summary at top
+    const overallWinRate = calculateWinRate(totalWins, totalGames);
+    const summaryHtml = `
+        <div class="stats-summary">
+            <h3>Overall Statistics</h3>
+            <p>Total Games: <span>${totalGames}</span></p>
+            <p>Overall Win Rate: <span class="win-rate">${overallWinRate}</span></p>
+            <p>Best Win Streak: <span>${overallStreaks.bestWin}</span></p>
+            <button onclick="exportStatsToCSV()" class="export-btn">Export to CSV</button>
+        </div>
+    ` + html;
+
+    content.innerHTML = summaryHtml;
 }
 
 function resetStats() {
@@ -1731,6 +1932,10 @@ function endGame(result) {
 
     const currentStats = getCurrentStats();
 
+    // Determine player's symbol for stats tracking
+    const playerSymbol = (gameMode === 'ai' && !playerGoesFirst) ? 'O' : 'X';
+    let gameResult = 'draw';
+
     // Update series scores
     if (result === 'draw') {
         seriesScores.draws++;
@@ -1739,11 +1944,18 @@ function endGame(result) {
         turnDisplay.textContent = t('gameOver');
         playDrawSound();
         triggerHaptic(30);
+        gameResult = 'draw';
 
         if (gameMode === 'pvp') {
             currentStats.pvp.draws++;
+            currentStats.asX.draws++;
         } else if (gameMode === 'ai') {
             currentStats.ai[aiDifficulty].draws++;
+            if (playerSymbol === 'X') {
+                currentStats.asX.draws++;
+            } else {
+                currentStats.asO.draws++;
+            }
         }
     } else {
         if (result === 'X') {
@@ -1760,22 +1972,38 @@ function endGame(result) {
             triggerHaptic([50, 50, 50]);
             if (result === 'X') {
                 currentStats.pvp.player1Wins++;
+                currentStats.asX.wins++;
+                gameResult = 'win';
             } else {
                 currentStats.pvp.player2Wins++;
+                currentStats.asX.losses++;
+                gameResult = 'loss';
             }
         } else if (gameMode === 'ai') {
-            if (result === 'X') {
+            if (result === playerSymbol) {
                 resultDisplay.textContent = t('youWin');
                 resultDisplay.className = 'win';
                 playWinSound();
                 triggerHaptic([50, 50, 50]);
                 currentStats.ai[aiDifficulty].wins++;
+                gameResult = 'win';
+                if (playerSymbol === 'X') {
+                    currentStats.asX.wins++;
+                } else {
+                    currentStats.asO.wins++;
+                }
             } else {
                 resultDisplay.textContent = t('aiWins');
                 resultDisplay.className = 'lose';
                 playLoseSound();
                 triggerHaptic([100, 50, 100]);
                 currentStats.ai[aiDifficulty].losses++;
+                gameResult = 'loss';
+                if (playerSymbol === 'X') {
+                    currentStats.asX.losses++;
+                } else {
+                    currentStats.asO.losses++;
+                }
             }
         } else if (gameMode === 'ai_vs_ai') {
             const winnerName = result === 'X' ? player1Name : player2Name;
@@ -1784,6 +2012,19 @@ function endGame(result) {
             playWinSound();
         }
         turnDisplay.textContent = t('gameOver');
+    }
+
+    // Update streaks (not for AI vs AI)
+    if (gameMode !== 'ai_vs_ai') {
+        const newBest = updateStreaks(gameResult, currentStats);
+        if (newBest) {
+            setTimeout(() => {
+                alert(`NEW BEST WIN STREAK: ${currentStats.streaks.bestWin}!`);
+            }, 600);
+        }
+
+        // Log game to history
+        logGameToHistory(currentStats, gameResult, moveHistory.length);
     }
 
     resultDisplay.classList.remove('hidden');

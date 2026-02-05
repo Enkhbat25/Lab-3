@@ -948,3 +948,56 @@ button {
 #ai-control-btn.paused {
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
+
+/* Stats Summary */
+.stats-summary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.stats-summary h3 {
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.stats-summary p {
+    margin: 8px 0;
+    font-size: 1rem;
+}
+
+.stats-summary span {
+    font-weight: 700;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.export-btn {
+    margin-top: 15px;
+    background: rgba(255,255,255,0.2) !important;
+    border: 2px solid white !important;
+    padding: 10px 20px !important;
+    width: auto !important;
+}
+
+.export-btn:hover {
+    background: rgba(255,255,255,0.3) !important;
+}
+
+/* Win Rate Styling */
+.win-rate {
+    color: var(--success-color) !important;
+    font-weight: 700;
+}
+
+.streak {
+    font-weight: 700;
+}
+
+.streak.hot {
+    color: #f59e0b !important;
+}
