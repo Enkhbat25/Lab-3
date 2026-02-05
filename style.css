@@ -855,3 +855,96 @@ button {
 .modal-content button {
     margin: 10px 0;
 }
+
+/* Input Groups for Setup Screens */
+.input-group {
+    margin: 15px 0;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    border: 2px solid var(--screen-border);
+    border-radius: 10px;
+    background: var(--cell-bg);
+    color: var(--text-color);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.input-group select option {
+    background: var(--bg-gradient-1);
+    color: var(--text-color);
+}
+
+/* Series Info Display */
+#series-info {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-align: center;
+}
+
+#series-score {
+    font-size: 1rem;
+}
+
+/* Timer Display */
+#timer-display {
+    background: var(--stats-bg);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+#timer-value {
+    color: var(--primary-color);
+    font-size: 1.4rem;
+}
+
+#timer-display.warning #timer-value {
+    color: var(--warning-color);
+    animation: pulse 0.5s ease infinite;
+}
+
+#timer-display.danger #timer-value {
+    color: var(--danger-color);
+    animation: pulse 0.3s ease infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* AI vs AI Controls */
+#ai-control-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+#ai-control-btn.paused {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}

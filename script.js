@@ -72,7 +72,38 @@ const translations = {
         size5x5: '5×5',
         winConditionPrefix: 'Get',
         winConditionSuffix: 'in a row to win!',
-        boardSize: 'Board Size'
+        boardSize: 'Board Size',
+        aivsai: 'AI vs AI',
+        pvpSetup: 'Player Setup',
+        player1Name: 'Player 1 Name (X):',
+        player2Name: 'Player 2 Name (O):',
+        seriesLength: 'Series Length:',
+        singleGame: 'Single Game',
+        bestOf3: 'Best of 3',
+        bestOf5: 'Best of 5',
+        bestOf7: 'Best of 7',
+        moveTimer: 'Move Timer:',
+        timerOff: 'Off',
+        startGame: 'Start Game',
+        handicap: 'Handicap:',
+        handicapNone: 'None',
+        handicapAISkip: 'AI skips first turn',
+        handicapAIRandom: 'AI random first move',
+        handicapPrePlaced: 'Center pre-placed for you',
+        ai1Difficulty: 'AI 1 (X) Difficulty:',
+        ai2Difficulty: 'AI 2 (O) Difficulty:',
+        moveDelay: 'Move Delay:',
+        difficulty: 'Difficulty:',
+        timeLeft: 'Time:',
+        seriesScore: 'Series:',
+        roundOf: 'Round',
+        winsNeeded: 'First to',
+        wins: 'wins',
+        nextRound: 'Next Round',
+        seriesWinner: 'wins the series!',
+        pauseAI: 'Pause',
+        resumeAI: 'Resume',
+        timeUp: "Time's up! Random move made."
     },
     mn: {
         title: 'Икс-Тэг',
@@ -633,6 +664,23 @@ let moveHistory = [];
 let playerGoesFirst = true;
 let focusedCellIndex = 0;
 
+// New Feature State
+let player1Name = 'Player 1';
+let player2Name = 'Player 2';
+let seriesLength = 1;
+let seriesScores = { player1: 0, player2: 0, draws: 0 };
+let currentRound = 1;
+let timerDuration = 0;
+let timerInterval = null;
+let timeRemaining = 0;
+let handicapMode = 'none';
+let aiFirstMoveRandom = false;
+let ai1Difficulty = 'easy';
+let ai2Difficulty = 'easy';
+let aiMoveDelay = 1000;
+let aiVsAiPaused = false;
+let aiVsAiTimeout = null;
+
 // Winning lines cache for performance
 const winningLinesCache = new Map();
 
@@ -902,6 +950,8 @@ const aiMenuScreen = document.getElementById('ai-menu');
 const gameScreen = document.getElementById('game');
 const statsScreen = document.getElementById('stats');
 const helpScreen = document.getElementById('help');
+const pvpSetupScreen = document.getElementById('pvp-setup');
+const aiVsAiMenuScreen = document.getElementById('ai-vs-ai-menu');
 let cells = document.querySelectorAll('.cell');
 const turnDisplay = document.getElementById('turn-display');
 const modeDisplay = document.getElementById('mode-display');
@@ -1027,6 +1077,8 @@ function showScreen(screen) {
     gameScreen.classList.add('hidden');
     statsScreen.classList.add('hidden');
     helpScreen.classList.add('hidden');
+    if (pvpSetupScreen) pvpSetupScreen.classList.add('hidden');
+    if (aiVsAiMenuScreen) aiVsAiMenuScreen.classList.add('hidden');
     screen.classList.remove('hidden');
 }
 
@@ -1045,6 +1097,212 @@ function showStats() {
 
 function showHelp() {
     showScreen(helpScreen);
+}
+
+function showPvPSetup() {
+    if (pvpSetupScreen) {
+        showScreen(pvpSetupScreen);
+    } else {
+        startPvP();
+    }
+}
+
+function showAIvsAIMenu() {
+    if (aiVsAiMenuScreen) {
+        showScreen(aiVsAiMenuScreen);
+    }
+}
+
+function startPvPWithSettings() {
+    const name1Input = document.getElementById('player1-name');
+    const name2Input = document.getElementById('player2-name');
+    const seriesSelect = document.getElementById('pvp-series-length');
+    const timerSelect = document.getElementById('pvp-timer');
+
+    player1Name = name1Input?.value.trim() || 'Player 1';
+    player2Name = name2Input?.value.trim() || 'Player 2';
+    seriesLength = parseInt(seriesSelect?.value || '1');
+    timerDuration = parseInt(timerSelect?.value || '0');
+
+    resetSeriesScores();
+    gameMode = 'pvp';
+    modeDisplay.textContent = t('pvpMode');
+    initGame();
+    showScreen(gameScreen);
+}
+
+function startAIWithSettings() {
+    const diffSelect = document.getElementById('ai-difficulty');
+    const seriesSelect = document.getElementById('ai-series-length');
+    const timerSelect = document.getElementById('ai-timer');
+    const handicapSelect = document.getElementById('ai-handicap');
+
+    aiDifficulty = diffSelect?.value || 'medium';
+    seriesLength = parseInt(seriesSelect?.value || '1');
+    timerDuration = parseInt(timerSelect?.value || '0');
+    handicapMode = handicapSelect?.value || 'none';
+
+    resetSeriesScores();
+    player1Name = 'You';
+    player2Name = `AI (${t(aiDifficulty)})`;
+
+    gameMode = 'ai';
+    const diffText = t(aiDifficulty);
+    modeDisplay.textContent = `${t('vsAI')} (${diffText})`;
+    showFirstMoveChoice();
+}
+
+function startAIvsAI() {
+    const ai1Select = document.getElementById('ai1-difficulty');
+    const ai2Select = document.getElementById('ai2-difficulty');
+    const delaySelect = document.getElementById('ai-move-delay');
+
+    ai1Difficulty = ai1Select?.value || 'easy';
+    ai2Difficulty = ai2Select?.value || 'easy';
+    aiMoveDelay = parseInt(delaySelect?.value || '1000');
+
+    player1Name = `AI-1 (${t(ai1Difficulty)})`;
+    player2Name = `AI-2 (${t(ai2Difficulty)})`;
+    seriesLength = 1;
+    timerDuration = 0;
+
+    resetSeriesScores();
+    gameMode = 'ai_vs_ai';
+    aiVsAiPaused = false;
+    modeDisplay.textContent = t('aivsai');
+    initGame();
+    showScreen(gameScreen);
+
+    // Start AI vs AI game
+    setTimeout(makeAIvsAIMove, aiMoveDelay);
+}
+
+function makeAIvsAIMove() {
+    if (!gameActive || gameMode !== 'ai_vs_ai' || aiVsAiPaused) return;
+
+    const difficulty = currentPlayer === 'X' ? ai1Difficulty : ai2Difficulty;
+    const move = getAIMoveForDifficulty(difficulty);
+
+    if (move !== null) {
+        makeMove(move);
+    }
+
+    if (gameActive && gameMode === 'ai_vs_ai' && !aiVsAiPaused) {
+        aiVsAiTimeout = setTimeout(makeAIvsAIMove, aiMoveDelay);
+    }
+}
+
+function getAIMoveForDifficulty(difficulty) {
+    const available = board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
+    if (available.length === 0) return null;
+
+    // Temporarily set aiDifficulty for the helper functions
+    const savedDifficulty = aiDifficulty;
+    aiDifficulty = difficulty;
+
+    let move;
+    switch (difficulty) {
+        case 'easy':
+            move = getEasyMove(available);
+            break;
+        case 'medium':
+            move = getMediumMove(available);
+            break;
+        case 'hard':
+            move = getHardMove();
+            break;
+        default:
+            move = getEasyMove(available);
+    }
+
+    aiDifficulty = savedDifficulty;
+    return move;
+}
+
+function resetSeriesScores() {
+    seriesScores = { player1: 0, player2: 0, draws: 0 };
+    currentRound = 1;
+    updateSeriesDisplay();
+}
+
+function updateSeriesDisplay() {
+    const seriesInfo = document.getElementById('series-info');
+    const seriesScore = document.getElementById('series-score');
+
+    if (seriesLength > 1 && seriesInfo && seriesScore) {
+        const winsNeeded = Math.ceil(seriesLength / 2);
+        seriesScore.textContent = `${t('roundOf')} ${currentRound} | ${player1Name}: ${seriesScores.player1} - ${player2Name}: ${seriesScores.player2} | ${t('winsNeeded')} ${winsNeeded} ${t('wins')}`;
+        seriesInfo.classList.remove('hidden');
+    } else if (seriesInfo) {
+        seriesInfo.classList.add('hidden');
+    }
+}
+
+// Timer Functions
+function startTimer() {
+    if (timerDuration <= 0) return;
+
+    const timerDisplay = document.getElementById('timer-display');
+    const timerValue = document.getElementById('timer-value');
+
+    if (!timerDisplay || !timerValue) return;
+
+    timeRemaining = timerDuration;
+    timerDisplay.classList.remove('hidden', 'warning', 'danger');
+    timerValue.textContent = timeRemaining;
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        timeRemaining--;
+        timerValue.textContent = timeRemaining;
+
+        if (timeRemaining <= 5) {
+            timerDisplay.classList.add('danger');
+            timerDisplay.classList.remove('warning');
+        } else if (timeRemaining <= 10) {
+            timerDisplay.classList.add('warning');
+        }
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            makeRandomMove();
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+    const timerDisplay = document.getElementById('timer-display');
+    if (timerDisplay) {
+        timerDisplay.classList.add('hidden');
+    }
+}
+
+function makeRandomMove() {
+    if (!gameActive) return;
+
+    const available = board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
+    if (available.length > 0) {
+        const randomIndex = Math.floor(Math.random() * available.length);
+        const move = available[randomIndex];
+
+        // Show time up message briefly
+        turnDisplay.textContent = t('timeUp');
+
+        setTimeout(() => {
+            makeMove(move);
+            if (gameActive && gameMode === 'ai') {
+                setTimeout(() => {
+                    if (gameActive) {
+                        const aiMove = getAIMove();
+                        if (aiMove !== null) {
+                            makeMove(aiMove);
+                        }
+                    }
+                }, 500);
+            }
+        }, 500);
+    }
 }
 
 function updateStatsDisplay() {
@@ -1125,8 +1383,15 @@ function initGame() {
     gameActive = true;
     moveHistory = [];
     focusedCellIndex = 0;
+    aiFirstMoveRandom = false;
     resultDisplay.classList.add('hidden');
     resultDisplay.className = 'hidden';
+
+    // Clear AI vs AI timeout
+    if (aiVsAiTimeout) {
+        clearTimeout(aiVsAiTimeout);
+        aiVsAiTimeout = null;
+    }
 
     cells.forEach(cell => {
         cell.textContent = '';
@@ -1139,21 +1404,70 @@ function initGame() {
     // Reset accessibility attributes
     resetCellAccessibility();
 
+    // Stop any running timer
+    stopTimer();
+
     updateUndoButton();
-    updateTurnDisplay();
+    updateSeriesDisplay();
     updateBoardSizeSelector();
+
+    // Apply handicap for AI mode
+    if (gameMode === 'ai' && handicapMode !== 'none') {
+        applyHandicap();
+    }
+
+    updateTurnDisplay();
+
+    // Start timer for human player if enabled
+    if (timerDuration > 0 && gameMode !== 'ai_vs_ai') {
+        if (gameMode === 'pvp' || (gameMode === 'ai' && playerGoesFirst)) {
+            startTimer();
+        }
+    }
 
     // If AI goes first, make AI move
     if (gameMode === 'ai' && !playerGoesFirst) {
         currentPlayer = 'O';
+        updateTurnDisplay();
         setTimeout(() => {
             if (gameActive) {
-                const aiMove = getAIMove();
+                let aiMove;
+                if (aiFirstMoveRandom) {
+                    const available = board.map((cell, i) => cell === '' ? i : null).filter(i => i !== null);
+                    aiMove = available[Math.floor(Math.random() * available.length)];
+                    aiFirstMoveRandom = false;
+                } else {
+                    aiMove = getAIMove();
+                }
                 if (aiMove !== null) {
                     makeMove(aiMove);
                 }
             }
         }, 500);
+    }
+}
+
+function applyHandicap() {
+    switch (handicapMode) {
+        case 'ai_skip':
+            // Human always goes first - handled by forcing playerGoesFirst = true
+            playerGoesFirst = true;
+            break;
+        case 'ai_random':
+            // AI's first move will be random
+            aiFirstMoveRandom = true;
+            break;
+        case 'pre_placed':
+            // Pre-place center for human
+            const center = Math.floor(boardSize / 2);
+            const centerIndex = center * boardSize + center;
+            board[centerIndex] = 'X';
+            cells[centerIndex].textContent = 'X';
+            cells[centerIndex].classList.add('x');
+            updateCellAccessibility(centerIndex, 'X');
+            moveHistory.push({ index: centerIndex, player: 'X' });
+            currentPlayer = 'O'; // AI's turn now
+            break;
     }
 }
 
@@ -1231,7 +1545,11 @@ function updateTurnDisplay() {
         return;
     }
     if (gameMode === 'pvp') {
-        turnDisplay.textContent = currentPlayer === 'X' ? t('player1Turn') : t('player2Turn');
+        const currentName = currentPlayer === 'X' ? player1Name : player2Name;
+        turnDisplay.textContent = `${currentName}'s turn (${currentPlayer})`;
+    } else if (gameMode === 'ai_vs_ai') {
+        const currentName = currentPlayer === 'X' ? player1Name : player2Name;
+        turnDisplay.textContent = `${currentName} thinking...`;
     } else {
         turnDisplay.textContent = currentPlayer === 'X' ? t('yourTurn') : t('aiThinking');
     }
@@ -1247,6 +1565,7 @@ function handleCellClick(cell) {
 
     if (board[index] !== '' || !gameActive) return;
     if (gameMode === 'ai' && currentPlayer === 'O') return;
+    if (gameMode === 'ai_vs_ai') return; // No clicks allowed in AI vs AI mode
 
     // Trigger haptic feedback on cell tap
     triggerHaptic(10);
@@ -1256,7 +1575,14 @@ function handleCellClick(cell) {
     if (gameActive && gameMode === 'ai') {
         setTimeout(() => {
             if (gameActive) {
-                const aiMove = getAIMove();
+                let aiMove;
+                if (aiFirstMoveRandom) {
+                    const available = board.map((c, i) => c === '' ? i : null).filter(i => i !== null);
+                    aiMove = available[Math.floor(Math.random() * available.length)];
+                    aiFirstMoveRandom = false;
+                } else {
+                    aiMove = getAIMove();
+                }
                 if (aiMove !== null) {
                     makeMove(aiMove);
                 }
@@ -1266,6 +1592,9 @@ function handleCellClick(cell) {
 }
 
 function makeMove(index) {
+    // Stop timer when move is made
+    stopTimer();
+
     // Track move in history
     moveHistory.push({ index: index, player: currentPlayer });
 
@@ -1284,6 +1613,16 @@ function makeMove(index) {
     } else {
         currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
         updateTurnDisplay();
+
+        // Start timer for next player if applicable
+        if (timerDuration > 0 && gameActive && gameMode !== 'ai_vs_ai') {
+            // Only start timer for human players
+            if (gameMode === 'pvp') {
+                startTimer();
+            } else if (gameMode === 'ai' && currentPlayer === 'X') {
+                startTimer();
+            }
+        }
     }
 
     updateUndoButton();
@@ -1382,56 +1721,127 @@ function findWinningMove(player) {
 
 function endGame(result) {
     gameActive = false;
+    stopTimer();
+
+    // Clear AI vs AI timeout
+    if (aiVsAiTimeout) {
+        clearTimeout(aiVsAiTimeout);
+        aiVsAiTimeout = null;
+    }
+
     const currentStats = getCurrentStats();
 
+    // Update series scores
     if (result === 'draw') {
+        seriesScores.draws++;
         resultDisplay.textContent = t('draw');
         resultDisplay.className = 'draw';
         turnDisplay.textContent = t('gameOver');
         playDrawSound();
-        triggerHaptic(30); // Draw haptic pattern
+        triggerHaptic(30);
 
         if (gameMode === 'pvp') {
             currentStats.pvp.draws++;
-        } else {
+        } else if (gameMode === 'ai') {
             currentStats.ai[aiDifficulty].draws++;
         }
     } else {
+        if (result === 'X') {
+            seriesScores.player1++;
+        } else {
+            seriesScores.player2++;
+        }
+
         if (gameMode === 'pvp') {
-            resultDisplay.textContent = result === 'X' ? t('player1Wins') : t('player2Wins');
+            const winnerName = result === 'X' ? player1Name : player2Name;
+            resultDisplay.textContent = `${winnerName} ${t('wins')}!`;
             resultDisplay.className = 'win';
             playWinSound();
-            triggerHaptic([50, 50, 50]); // Win haptic pattern
+            triggerHaptic([50, 50, 50]);
             if (result === 'X') {
                 currentStats.pvp.player1Wins++;
             } else {
                 currentStats.pvp.player2Wins++;
             }
-        } else {
+        } else if (gameMode === 'ai') {
             if (result === 'X') {
                 resultDisplay.textContent = t('youWin');
                 resultDisplay.className = 'win';
                 playWinSound();
-                triggerHaptic([50, 50, 50]); // Win haptic pattern
+                triggerHaptic([50, 50, 50]);
                 currentStats.ai[aiDifficulty].wins++;
             } else {
                 resultDisplay.textContent = t('aiWins');
                 resultDisplay.className = 'lose';
                 playLoseSound();
-                triggerHaptic([100, 50, 100]); // Lose haptic pattern
+                triggerHaptic([100, 50, 100]);
                 currentStats.ai[aiDifficulty].losses++;
             }
+        } else if (gameMode === 'ai_vs_ai') {
+            const winnerName = result === 'X' ? player1Name : player2Name;
+            resultDisplay.textContent = `${winnerName} ${t('wins')}!`;
+            resultDisplay.className = 'win';
+            playWinSound();
         }
         turnDisplay.textContent = t('gameOver');
     }
 
     resultDisplay.classList.remove('hidden');
     updateAllCellsDisabled(true);
+    updateSeriesDisplay();
+
+    // Check if series is over
+    if (seriesLength > 1) {
+        const winsNeeded = Math.ceil(seriesLength / 2);
+        if (seriesScores.player1 >= winsNeeded || seriesScores.player2 >= winsNeeded) {
+            // Series is over
+            const seriesWinner = seriesScores.player1 >= winsNeeded ? player1Name : player2Name;
+            setTimeout(() => {
+                alert(`${seriesWinner} ${t('seriesWinner')}`);
+            }, 500);
+        }
+    }
+
     saveStats();
 }
 
-function restartGame() {
+function nextRound() {
+    if (seriesLength <= 1) return;
+
+    const winsNeeded = Math.ceil(seriesLength / 2);
+    if (seriesScores.player1 >= winsNeeded || seriesScores.player2 >= winsNeeded) {
+        // Series is already over
+        return;
+    }
+
+    currentRound++;
+    // Reset handicap for subsequent rounds (only apply on first round)
+    const savedHandicap = handicapMode;
+    handicapMode = 'none';
     initGame();
+    handicapMode = savedHandicap;
+}
+
+function restartGame() {
+    if (seriesLength > 1) {
+        const winsNeeded = Math.ceil(seriesLength / 2);
+        if (seriesScores.player1 >= winsNeeded || seriesScores.player2 >= winsNeeded) {
+            // Series is over, reset everything
+            resetSeriesScores();
+        } else {
+            // Continue to next round
+            currentRound++;
+        }
+    }
+
+    // For AI vs AI mode, restart the game loop
+    if (gameMode === 'ai_vs_ai') {
+        aiVsAiPaused = false;
+        initGame();
+        setTimeout(makeAIvsAIMove, aiMoveDelay);
+    } else {
+        initGame();
+    }
 }
 
 // AI Logic

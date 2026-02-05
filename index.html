@@ -25,19 +25,120 @@
         <!-- Menu Screen -->
         <div id="menu" class="screen">
             <h2 data-i18n="mainMenu">Main Menu</h2>
-            <button onclick="startPvP()" data-i18n="pvp">Player vs Player</button>
+            <button onclick="showPvPSetup()" data-i18n="pvp">Player vs Player</button>
             <button onclick="showAIMenu()" data-i18n="pvai">Player vs AI</button>
+            <button onclick="showAIvsAIMenu()" data-i18n="aivsai">AI vs AI</button>
             <button onclick="showStats()" data-i18n="viewStats">View Statistics</button>
             <button onclick="showHelp()" data-i18n="help">Help</button>
             <button onclick="resetStats()" class="back-btn" data-i18n="resetStats">Reset Statistics</button>
         </div>
 
+        <!-- PvP Setup Screen -->
+        <div id="pvp-setup" class="screen hidden">
+            <h2 data-i18n="pvpSetup">Player Setup</h2>
+            <div class="input-group">
+                <label data-i18n="player1Name">Player 1 Name (X):</label>
+                <input type="text" id="player1-name" placeholder="Player 1" maxlength="15">
+            </div>
+            <div class="input-group">
+                <label data-i18n="player2Name">Player 2 Name (O):</label>
+                <input type="text" id="player2-name" placeholder="Player 2" maxlength="15">
+            </div>
+            <div class="input-group">
+                <label data-i18n="seriesLength">Series Length:</label>
+                <select id="pvp-series-length">
+                    <option value="1" data-i18n="singleGame">Single Game</option>
+                    <option value="3" data-i18n="bestOf3">Best of 3</option>
+                    <option value="5" data-i18n="bestOf5">Best of 5</option>
+                    <option value="7" data-i18n="bestOf7">Best of 7</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label data-i18n="moveTimer">Move Timer:</label>
+                <select id="pvp-timer">
+                    <option value="0" data-i18n="timerOff">Off</option>
+                    <option value="5">5s</option>
+                    <option value="10">10s</option>
+                    <option value="15">15s</option>
+                    <option value="30">30s</option>
+                </select>
+            </div>
+            <button onclick="startPvPWithSettings()" data-i18n="startGame">Start Game</button>
+            <button onclick="showMenu()" class="back-btn" data-i18n="back">Back</button>
+        </div>
+
         <!-- AI Difficulty Selection -->
         <div id="ai-menu" class="screen hidden">
             <h2 data-i18n="selectDifficulty">Select Difficulty</h2>
-            <button onclick="startAI('easy')" data-i18n="easy">Easy</button>
-            <button onclick="startAI('medium')" data-i18n="medium">Medium</button>
-            <button onclick="startAI('hard')" data-i18n="hard">Hard (Unbeatable)</button>
+            <div class="input-group">
+                <label data-i18n="difficulty">Difficulty:</label>
+                <select id="ai-difficulty">
+                    <option value="easy" data-i18n="easy">Easy</option>
+                    <option value="medium" data-i18n="medium">Medium</option>
+                    <option value="hard" data-i18n="hard">Hard (Unbeatable)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label data-i18n="seriesLength">Series Length:</label>
+                <select id="ai-series-length">
+                    <option value="1" data-i18n="singleGame">Single Game</option>
+                    <option value="3" data-i18n="bestOf3">Best of 3</option>
+                    <option value="5" data-i18n="bestOf5">Best of 5</option>
+                    <option value="7" data-i18n="bestOf7">Best of 7</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label data-i18n="moveTimer">Move Timer:</label>
+                <select id="ai-timer">
+                    <option value="0" data-i18n="timerOff">Off</option>
+                    <option value="5">5s</option>
+                    <option value="10">10s</option>
+                    <option value="15">15s</option>
+                    <option value="30">30s</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label data-i18n="handicap">Handicap:</label>
+                <select id="ai-handicap">
+                    <option value="none" data-i18n="handicapNone">None</option>
+                    <option value="ai_skip" data-i18n="handicapAISkip">AI skips first turn</option>
+                    <option value="ai_random" data-i18n="handicapAIRandom">AI random first move</option>
+                    <option value="pre_placed" data-i18n="handicapPrePlaced">Center pre-placed for you</option>
+                </select>
+            </div>
+            <button onclick="startAIWithSettings()" data-i18n="startGame">Start Game</button>
+            <button onclick="showMenu()" class="back-btn" data-i18n="back">Back</button>
+        </div>
+
+        <!-- AI vs AI Menu -->
+        <div id="ai-vs-ai-menu" class="screen hidden">
+            <h2 data-i18n="aivsai">AI vs AI</h2>
+            <div class="input-group">
+                <label data-i18n="ai1Difficulty">AI 1 (X) Difficulty:</label>
+                <select id="ai1-difficulty">
+                    <option value="easy" data-i18n="easy">Easy</option>
+                    <option value="medium" data-i18n="medium">Medium</option>
+                    <option value="hard" data-i18n="hard">Hard</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label data-i18n="ai2Difficulty">AI 2 (O) Difficulty:</label>
+                <select id="ai2-difficulty">
+                    <option value="easy" data-i18n="easy">Easy</option>
+                    <option value="medium" data-i18n="medium">Medium</option>
+                    <option value="hard" data-i18n="hard">Hard</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label data-i18n="moveDelay">Move Delay:</label>
+                <select id="ai-move-delay">
+                    <option value="500">500ms (Fast)</option>
+                    <option value="1000" selected>1000ms (Normal)</option>
+                    <option value="1500">1500ms (Slow)</option>
+                    <option value="2000">2000ms (Very Slow)</option>
+                </select>
+            </div>
+            <button onclick="startAIvsAI()" data-i18n="startGame">Start Game</button>
             <button onclick="showMenu()" class="back-btn" data-i18n="back">Back</button>
         </div>
 
@@ -59,6 +160,12 @@
                 <span data-i18n="winConditionPrefix">Get</span>
                 <span id="win-condition-number">3</span>
                 <span data-i18n="winConditionSuffix">in a row to win!</span>
+            </div>
+            <div id="series-info" class="hidden">
+                <span id="series-score"></span>
+            </div>
+            <div id="timer-display" class="hidden">
+                <span data-i18n="timeLeft">Time:</span> <span id="timer-value">--</span>
             </div>
             <div id="game-info">
                 <span id="mode-display"></span>
