@@ -2,7 +2,10 @@ import time
 import random
 from board import Board
 from player import HumanPlayer, AIPlayer, TimedHumanPlayer
-from stats import update_pvp_stats, update_ai_stats, display_stats, reset_stats
+from stats import (
+    update_pvp_stats, update_ai_stats, display_stats, reset_stats,
+    start_game_log, log_move, display_history, export_stats_interactive
+)
 
 
 def display_title():
@@ -17,9 +20,11 @@ def display_menu():
     print("  2. Player vs AI")
     print("  3. AI vs AI")
     print("  4. View Statistics")
-    print("  5. Reset Statistics")
-    print("  6. Quit")
-    return input("\nSelect option (1-6): ")
+    print("  5. View Game History")
+    print("  6. Export Stats to CSV")
+    print("  7. Reset Statistics")
+    print("  8. Quit")
+    return input("\nSelect option (1-8): ")
 
 
 def get_player_names():
@@ -134,12 +139,29 @@ def play_game(player1, player2, game_mode, difficulty=None, handicap='none'):
     current_player = player1
     players = {player1.symbol: player1, player2.symbol: player2}
 
+    # Determine human player symbol for stats
+    human_symbol = 'X'
+    if game_mode == 'vs_ai':
+        if isinstance(player1, (HumanPlayer, TimedHumanPlayer)):
+            human_symbol = 'X'
+        else:
+            human_symbol = 'O'
+
+    # Start game logging
+    start_game_log(
+        game_mode=game_mode,
+        player_x=player1.name,
+        player_o=player2.name,
+        ai_difficulty=difficulty
+    )
+
     # Apply handicaps
     ai_first_move_random = False
     if handicap == 'pre_placed':
         # Pre-place center for human
-        human_symbol = 'X' if isinstance(player1, (HumanPlayer, TimedHumanPlayer)) else 'O'
-        board.make_move(5, human_symbol)
+        pre_symbol = 'X' if isinstance(player1, (HumanPlayer, TimedHumanPlayer)) else 'O'
+        board.make_move(5, pre_symbol)
+        log_move(pre_symbol, 5)  # Log the handicap move
         print("\nHandicap applied: Center position (5) pre-marked for human!")
     elif handicap == 'ai_random_first':
         ai_first_move_random = True
@@ -169,6 +191,7 @@ def play_game(player1, player2, game_mode, difficulty=None, handicap='none'):
             move = current_player.get_move(board)
 
         board.make_move(move, current_player.symbol)
+        log_move(current_player.symbol, move)  # Log the move
 
         # Switch players
         current_player = player2 if current_player == player1 else player1
@@ -181,21 +204,21 @@ def play_game(player1, player2, game_mode, difficulty=None, handicap='none'):
         print(f"\n{winning_player.name} ({winner}) wins!")
 
         if game_mode == 'pvp':
-            update_pvp_stats(1 if winner == 'X' else 2)
+            update_pvp_stats(1 if winner == 'X' else 2, 'X')
         elif game_mode == 'vs_ai':
             if isinstance(winning_player, (HumanPlayer, TimedHumanPlayer)):
-                update_ai_stats(difficulty, 'win')
+                update_ai_stats(difficulty, 'win', human_symbol)
             else:
-                update_ai_stats(difficulty, 'loss')
+                update_ai_stats(difficulty, 'loss', human_symbol)
         # No stats update for AI vs AI mode
 
         return winning_player
     else:
         print("\nIt's a draw!")
         if game_mode == 'pvp':
-            update_pvp_stats(None)
+            update_pvp_stats(None, 'X')
         elif game_mode == 'vs_ai':
-            update_ai_stats(difficulty, 'draw')
+            update_ai_stats(difficulty, 'draw', human_symbol)
         return None
 
 
@@ -394,14 +417,18 @@ def main():
         elif choice == '4':
             display_stats()
         elif choice == '5':
+            display_history()
+        elif choice == '6':
+            export_stats_interactive()
+        elif choice == '7':
             confirm = input("Are you sure you want to reset statistics? (Y/N): ")
             if confirm.strip().upper() == 'Y':
                 reset_stats()
-        elif choice == '6':
+        elif choice == '8':
             print("\nThanks for playing! Goodbye!")
             break
         else:
-            print("Invalid option. Please enter 1-6.")
+            print("Invalid option. Please enter 1-8.")
 
         input("\nPress Enter to continue...")
 
